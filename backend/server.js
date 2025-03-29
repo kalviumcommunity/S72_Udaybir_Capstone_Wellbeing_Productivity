@@ -9,11 +9,21 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+if (process.env.NODE_ENV !== "PRODUCTION") {
+  require("dotenv").config({
+      path: "./config/.env",
+  });
+}
+
+mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log("MongoDB Connected"))
   .catch(err => console.log(err));
 
-app.use("/api/tasks", require("./routes/tasks"));
-app.use("/api/auth", require("./routes/auth"));
+app.use("/api/tasks", require("./routes/taskRoutes"));
 
-app.listen(5000, () => console.log("Server running on port 5000"));
+// app.use("/api/auth", require("./routes/auth"));
+// connectDatabase();
+
+const server = app.listen(process.env.PORT, () => {
+  console.log(`Server is running on http://localhost:${process.env.PORT}`);
+});
