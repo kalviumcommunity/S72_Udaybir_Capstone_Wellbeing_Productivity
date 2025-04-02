@@ -1,8 +1,11 @@
-
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 const User = require('../models/User');
+const auth = require('../middleware/auth'); // Ensure authentication for protected routes
+
+const saltRounds = 10; // For password hashing
 
 // Register a new user
 router.post('/register', async (req, res) => {
@@ -10,26 +13,26 @@ router.post('/register', async (req, res) => {
     const { username, email, password } = req.body;
     
     // Check if user already exists
-    const userExists = await User.findOne({ 
-      $or: [{ email }, { username }] 
-    });
-    
+    const userExists = await User.findOne({ $or: [{ email }, { username }] });
     if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
     }
+    
+    // Hash the password before saving
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
     
     // Create new user
     const user = new User({
       username,
       email,
-      password
+      password: hashedPassword
     });
     
     await user.save();
     
     // Create and sign JWT
     const token = jwt.sign(
-      { userId: user._id }, 
+      { userId: user._id },
       process.env.JWT_SECRET || 'sentience-secret-key',
       { expiresIn: '7d' }
     );
@@ -41,7 +44,7 @@ router.post('/register', async (req, res) => {
       email: user.email
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
@@ -57,14 +60,14 @@ router.post('/login', async (req, res) => {
     }
     
     // Check password
-    const isMatch = await user.comparePassword(password);
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
     
     // Create and sign JWT
     const token = jwt.sign(
-      { userId: user._id }, 
+      { userId: user._id },
       process.env.JWT_SECRET || 'sentience-secret-key',
       { expiresIn: '7d' }
     );
@@ -76,14 +79,13 @@ router.post('/login', async (req, res) => {
       email: user.email
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Get user profile
-router.get('/profile', async (req, res) => {
+// Get user profile (Protected Route)
+router.get('/profile', auth, async (req, res) => {
   try {
-    // Authentication middleware would attach user to req object
     const user = await User.findById(req.user.userId).select('-password');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -91,7 +93,7 @@ router.get('/profile', async (req, res) => {
     
     res.json(user);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
