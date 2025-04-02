@@ -23,4 +23,18 @@ router.get('/task/:id', async (req, res) => {
   }
 });
 
+router.post('/', async (req, res) => {
+  const task = new Task({
+    ...req.body,
+    updatedAt: new Date()
+  });
+
+  try {
+    const newTask = await task.save();
+    res.status(201).json(newTask);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
 module.exports = router;
