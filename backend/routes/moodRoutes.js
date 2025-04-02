@@ -32,5 +32,16 @@ router.get('/:userId/range', async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+// Add a new mood entry
+router.post('/', async (req, res) => {
+  const mood = new Mood(req.body);
+  
+  try {
+    const newMood = await mood.save();
+    res.status(201).json(newMood);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
 
 module.exports = router;
