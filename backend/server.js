@@ -1,11 +1,13 @@
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const taskRoutes = require('../backend/routes/taskRoutes');
+const taskRoutes = require('./routes/taskRoutes');
 const moodRoutes = require('./routes/moodRoutes');
 const focusRoutes = require('./routes/focusRoutes');
 const authRoutes = require('./routes/authRoutes');
+const auth = require('./middleware/auth');
 
 dotenv.config();
 
@@ -26,6 +28,13 @@ mongoose.connect(process.env.MONGODB_URI)
 app.use("/api/tasks", require("./routes/taskRoutes"));
 
 // Basic route
+app.use('/api/auth', authRoutes);
+
+// Protected routes
+app.use('/api/tasks', auth, taskRoutes);
+app.use('/api/moods', auth, moodRoutes);
+app.use('/api/focus', auth, focusRoutes);
+
 app.get('/', (req, res) => {
   res.send('Sentience API is running');
 });
