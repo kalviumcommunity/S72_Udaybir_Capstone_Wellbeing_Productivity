@@ -58,3 +58,4 @@ The purpose of this project is to provide students with a comprehensive tool to 
 - Review the entire project and ensure all goals are met.
 
 Backend server=https://s72-udaybir-capstone-wellbeing-f6wi.onrender.com
+Frontend Server=https://sentiencewellbeing.netlify.app/
