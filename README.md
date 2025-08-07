@@ -1,4 +1,4 @@
-# Student Sentience - Comprehensive Study Management Platform
+# [Student Sentience - Comprehensive Study Management Platform](https://sentiencehub.netlify.app/)
 
 A modern, full-stack web application designed to help students manage their academic life with features for task tracking, study planning, focus sessions, mood tracking, and analytics.
 
@@ -99,6 +99,11 @@ A modern, full-stack web application designed to help students manage their acad
 
 ### Production Deployment
 
+#### Live Application
+- **🌐 Live Demo**: [https://sentiencehub.netlify.app/](https://sentiencehub.netlify.app/)
+- **🔧 Backend API**: [https://sentience.onrender.com](https://sentience.onrender.com)
+
+#### Local Deployment
 Use Docker Compose for easy deployment:
 
 ```bash
@@ -109,6 +114,11 @@ docker-compose up -d
 # Frontend: http://localhost:3000
 # Backend: http://localhost:8000
 ```
+
+#### Cloud Deployment
+- **Frontend**: Deployed on Netlify
+- **Backend**: Deployed on Render
+- **Database**: MongoDB Atlas
 
 ## 🎯 Usage Guide
 
