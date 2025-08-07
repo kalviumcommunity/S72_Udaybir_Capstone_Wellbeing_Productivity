@@ -50,6 +50,9 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
+}, {
+  // Add this to handle existing indexes
+  strict: false
 });
 
 module.exports = mongoose.model('User', userSchema);
