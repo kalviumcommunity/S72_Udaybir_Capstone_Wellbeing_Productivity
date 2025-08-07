@@ -1,9 +1,0 @@
-# Logs
-*.log
-
-# Dependency directories
-node_modules/
-npm-debug.log*
-
-# Environment variables
-.env
