@@ -4,12 +4,25 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-// Middleware
+// Security middleware
+app.use(helmet());
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.'
+});
+app.use('/api/', limiter);
+
+// CORS middleware
 app.use(cors({
   origin: [
     'https://sentiencehub.netlify.app',
@@ -18,7 +31,13 @@ app.use(cors({
   ],
   credentials: true
 }));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+
+// Environment validation
+if (!process.env.JWT_SECRET) {
+  console.error('❌ JWT_SECRET is not set in environment variables');
+  process.exit(1);
+}
 
 // MongoDB Connection
 const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://uday:uday@cluster0.n2vzkur.mongodb.net/student-sentience?retryWrites=true&w=majority&appName=Cluster0';
