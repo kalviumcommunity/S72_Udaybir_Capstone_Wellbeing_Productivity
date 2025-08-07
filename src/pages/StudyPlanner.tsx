@@ -42,7 +42,7 @@ const StudyPlanner = () => {
     const initializeSessions = async () => {
       try {
         // Check if API is available
-        const response = await fetch('http://localhost:8000/api/health');
+        const response = await fetch('https://sentience.onrender.com/api/health');
         setApiAvailable(response.ok);
         
         if (response.ok && currentUser) {

@@ -100,7 +100,7 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
   useEffect(() => {
     const checkAPI = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/health');
+        const response = await fetch('https://sentience.onrender.com/api/health');
         setApiAvailable(response.ok);
       } catch (error) {
         setApiAvailable(false);

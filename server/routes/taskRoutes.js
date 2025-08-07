@@ -96,7 +96,7 @@ router.delete('/:id', auth, async (req, res) => {
       return res.status(401).json({ message: 'User not authorized' });
     }
     
-    await task.remove();
+    await Task.findByIdAndDelete(req.params.id);
     res.json({ message: 'Task removed' });
   } catch (err) {
     console.error(err.message);

@@ -54,7 +54,7 @@ router.delete('/:id', auth, async (req, res) => {
       return res.status(401).json({ message: 'User not authorized' });
     }
     
-    await moodEntry.remove();
+    await MoodEntry.findByIdAndDelete(req.params.id);
     res.json({ message: 'Mood entry removed' });
   } catch (err) {
     console.error(err.message);
