@@ -27,7 +27,7 @@ interface UserContextType {
 }
 
 // API URL - in production, this would be an environment variable
-const API_URL = 'http://localhost:8000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://sentience.onrender.com/api';
 
 // Mock user data for demo when API is not available
 const mockUsers: User[] = [
@@ -60,6 +60,16 @@ const mockUsers: User[] = [
     major: 'Psychology',
     year: '4th',
     bio: 'Psychology major researching cognitive development in children.'
+  },
+  {
+    id: '4',
+    name: 'Test User',
+    email: 'test@example.com',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Test',
+    university: 'Test University',
+    major: 'Test Major',
+    year: '1st',
+    bio: 'Test user for development purposes.'
   }
 ];
 
@@ -95,16 +105,10 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
           if (token) {
             await validateToken(token);
           } else {
-            // Auto-login with test user for development
-            try {
-              await login('test@example.com', 'password123');
-            } catch (error) {
-              console.log('Auto-login failed, using mock data');
-              // Check for saved user data
-              const savedUser = localStorage.getItem('currentUser');
-              if (savedUser) {
-                setCurrentUser(JSON.parse(savedUser));
-              }
+            // Check for saved user data
+            const savedUser = localStorage.getItem('currentUser');
+            if (savedUser) {
+              setCurrentUser(JSON.parse(savedUser));
             }
           }
         } else {
