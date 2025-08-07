@@ -95,8 +95,17 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        // Check API availability
-        const response = await fetch(`${API_URL}/health`);
+        // Check API availability with better error handling
+        const response = await fetch(`${API_URL}/health`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Origin': 'https://sentiencehub.netlify.app'
+          },
+          mode: 'cors'
+        });
+        
+        console.log('API Health Check Response:', response.status, response.ok);
         setApiAvailable(response.ok);
         
         if (response.ok) {
@@ -112,15 +121,13 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
             }
           }
         } else {
-          // Fallback to mock data
-          const savedUser = localStorage.getItem('currentUser');
-          if (savedUser) {
-            setCurrentUser(JSON.parse(savedUser));
-          }
+          console.log('API health check failed, but continuing with real API');
+          setApiAvailable(true); // Force API to be available
         }
       } catch (error) {
-        console.log('API not available, using mock data');
-        setApiAvailable(false);
+        console.log('API health check error:', error);
+        console.log('Continuing with real API despite health check failure');
+        setApiAvailable(true); // Force API to be available
         
         // Load saved user data
         const savedUser = localStorage.getItem('currentUser');
@@ -228,31 +235,36 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
           description: "Account created successfully",
         });
       } else {
-        // Mock registration
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Force API usage even if health check failed
+        console.log('Health check failed, but attempting real API registration');
         
-        // Check if user already exists
-        const existingUser = mockUsers.find(u => u.email === email);
-        if (existingUser) {
-          throw new Error('User with this email already exists');
+        const response = await fetch(`${API_URL}/users/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            email,
+            password,
+            university,
+            major,
+            year,
+            gender,
+            avatar
+          })
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Registration failed');
         }
         
-        const newUser: User = {
-          id: Date.now().toString(),
-          name,
-          email,
-          avatar: avatar || getAvatarUrl(gender || 'neutral', 'neutral'),
-          university,
-          major,
-          year,
-          gender
-        };
-        
-        setCurrentUser(newUser);
-        localStorage.setItem('currentUser', JSON.stringify(newUser));
+        const data = await response.json();
+        setCurrentUser(data.user);
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('currentUser', JSON.stringify(data.user));
         toast({
-          title: "Mock Registration",
-          description: "Account created with mock data",
+          title: "Welcome to Sentience!",
+          description: "Account created successfully",
         });
       }
     } catch (error) {
@@ -292,20 +304,27 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
           description: "Logged in successfully",
         });
       } else {
-        // Mock login with existing mock data
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Force API usage even if health check failed
+        console.log('Health check failed, but attempting real API login');
         
-        // Find user with matching email
-        const user = mockUsers.find(u => u.email === email);
-        if (!user) {
-          throw new Error('User not found');
+        const response = await fetch(`${API_URL}/users/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Login failed');
         }
         
-        setCurrentUser(user);
-        localStorage.setItem('currentUser', JSON.stringify(user));
+        const data = await response.json();
+        setCurrentUser(data.user);
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('currentUser', JSON.stringify(data.user));
         toast({
-          title: "Mock Login",
-          description: "Logged in with mock data",
+          title: "Welcome back!",
+          description: "Logged in successfully",
         });
       }
     } catch (error) {
