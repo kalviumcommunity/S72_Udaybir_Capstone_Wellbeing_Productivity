@@ -13,8 +13,6 @@ const PORT = process.env.PORT || 8000;
 app.use(cors({
   origin: [
     'https://sentiencehub.netlify.app',
-    'https://student-sentience.vercel.app',
-    'https://your-app-name.vercel.app', // Replace with your actual Vercel domain
     'http://localhost:3000',
     'http://localhost:4173'
   ],
@@ -23,7 +21,7 @@ app.use(cors({
 app.use(express.json());
 
 // MongoDB Connection
-const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/Capstone';
+const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://uday:uday@cluster0.n2vzkur.mongodb.net/student-sentience?retryWrites=true&w=majority&appName=Cluster0';
 console.log('Connecting to MongoDB:', mongoUri.replace(/\/\/.*@/, '//***:***@')); // Hide credentials
 
 // Add connection event listeners
