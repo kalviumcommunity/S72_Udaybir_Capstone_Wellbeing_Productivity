@@ -1,0 +1,357 @@
+
+import { toast } from '@/hooks/use-toast';
+
+const API_BASE_URL = 'http://localhost:8000/api';
+
+export interface Note {
+  id: string;
+  title: string;
+  description: string;
+  content: string;
+  category: string;
+  tags: string[];
+  author: {
+    id: string;
+    name: string;
+    avatar: string;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+  likes: number;
+  comments: number;
+  downloads: number;
+}
+
+// Helper function to get auth token from localStorage
+const getAuthToken = () => {
+  return localStorage.getItem('authToken');
+};
+
+// Helper function to make authenticated requests
+const makeAuthenticatedRequest = async (url: string, options: RequestInit = {}) => {
+  const token = getAuthToken();
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token && { 'x-auth-token': token }),
+    ...options.headers,
+  };
+
+  return fetch(url, {
+    ...options,
+    headers,
+  });
+};
+
+export const getNotes = async (): Promise<Note[]> => {
+  try {
+    const response = await makeAuthenticatedRequest(`${API_BASE_URL}/notes`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const notes = await response.json();
+    return notes.map((note: Record<string, unknown>) => ({
+      id: note._id || note.id,
+      title: note.title,
+      description: note.description,
+      content: note.content,
+      category: note.category,
+      tags: note.tags || [],
+      author: {
+        id: note.user || note.userId,
+        name: note.authorName || 'Anonymous',
+        avatar: note.authorAvatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Default'
+      },
+      createdAt: new Date(note.createdAt),
+      updatedAt: new Date(note.updatedAt),
+      likes: note.likes || 0,
+      comments: note.comments || 0,
+      downloads: note.downloads || 0
+    }));
+  } catch (error) {
+    console.error('Error fetching notes:', error);
+    toast({
+      title: "Failed to load notes",
+      description: error instanceof Error ? error.message : 'An unknown error occurred',
+      variant: "destructive"
+    });
+    return [];
+  }
+};
+
+export const getNote = async (noteId: string): Promise<Note | null> => {
+  try {
+    const response = await makeAuthenticatedRequest(`${API_BASE_URL}/notes/${noteId}`);
+    
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null;
+      }
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const note = await response.json();
+    return {
+      id: note._id || note.id,
+      title: note.title,
+      description: note.description,
+      content: note.content,
+      category: note.category,
+      tags: note.tags || [],
+      author: {
+        id: note.user || note.userId,
+        name: note.authorName || 'Anonymous',
+        avatar: note.authorAvatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Default'
+      },
+      createdAt: new Date(note.createdAt),
+      updatedAt: new Date(note.updatedAt),
+      likes: note.likes || 0,
+      comments: note.comments || 0,
+      downloads: note.downloads || 0
+    };
+  } catch (error) {
+    console.error('Error fetching note:', error);
+    toast({
+      title: "Failed to load note",
+      description: error instanceof Error ? error.message : 'An unknown error occurred',
+      variant: "destructive"
+    });
+    return null;
+  }
+};
+
+export const createNote = async (noteData: {
+  title: string;
+  description: string;
+  content: string;
+  category: string;
+  tags: string;
+}): Promise<Note | null> => {
+  try {
+    const token = getAuthToken();
+    if (!token) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to create notes",
+        variant: "destructive"
+      });
+      return null;
+    }
+
+    const tagsArray = noteData.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+
+    const response = await makeAuthenticatedRequest(`${API_BASE_URL}/notes`, {
+      method: 'POST',
+      body: JSON.stringify({
+        title: noteData.title,
+        description: noteData.description,
+        content: noteData.content,
+        category: noteData.category,
+        tags: tagsArray,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const note = await response.json();
+
+    toast({
+      title: "Success!",
+      description: "Note created successfully",
+    });
+
+    return {
+      id: note._id || note.id,
+      title: note.title,
+      description: note.description,
+      content: note.content,
+      category: note.category,
+      tags: note.tags || [],
+      author: {
+        id: note.user || note.userId,
+        name: note.authorName || 'Anonymous',
+        avatar: note.authorAvatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Default'
+      },
+      createdAt: new Date(note.createdAt),
+      updatedAt: new Date(note.updatedAt),
+      likes: note.likes || 0,
+      comments: note.comments || 0,
+      downloads: note.downloads || 0
+    };
+  } catch (error) {
+    console.error('Error creating note:', error);
+    toast({
+      title: "Failed to create note",
+      description: error instanceof Error ? error.message : 'An unknown error occurred',
+      variant: "destructive"
+    });
+    return null;
+  }
+};
+
+export const updateNote = async (
+  noteId: string,
+  noteData: Partial<{
+    title: string;
+    description: string;
+    content: string;
+    category: string;
+    tags: string;
+  }>
+): Promise<Note | null> => {
+  try {
+    const token = getAuthToken();
+    if (!token) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to update notes",
+        variant: "destructive"
+      });
+      return null;
+    }
+
+    const updateData: Record<string, unknown> = {};
+    
+    if (noteData.title !== undefined) updateData.title = noteData.title;
+    if (noteData.description !== undefined) updateData.description = noteData.description;
+    if (noteData.content !== undefined) updateData.content = noteData.content;
+    if (noteData.category !== undefined) updateData.category = noteData.category;
+    if (noteData.tags !== undefined) {
+      updateData.tags = noteData.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+    }
+
+    const response = await makeAuthenticatedRequest(`${API_BASE_URL}/notes/${noteId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updateData),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const note = await response.json();
+
+    toast({
+      title: "Success!",
+      description: "Note updated successfully",
+    });
+
+    return {
+      id: note._id || note.id,
+      title: note.title,
+      description: note.description,
+      content: note.content,
+      category: note.category,
+      tags: note.tags || [],
+      author: {
+        id: note.user || note.userId,
+        name: note.authorName || 'Anonymous',
+        avatar: note.authorAvatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Default'
+      },
+      createdAt: new Date(note.createdAt),
+      updatedAt: new Date(note.updatedAt),
+      likes: note.likes || 0,
+      comments: note.comments || 0,
+      downloads: note.downloads || 0
+    };
+  } catch (error) {
+    console.error('Error updating note:', error);
+    toast({
+      title: "Failed to update note",
+      description: error instanceof Error ? error.message : 'An unknown error occurred',
+      variant: "destructive"
+    });
+    return null;
+  }
+};
+
+export const likeNote = async (noteId: string): Promise<Note | null> => {
+  try {
+    const token = getAuthToken();
+    if (!token) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to like notes",
+        variant: "destructive"
+      });
+      return null;
+    }
+
+    const response = await makeAuthenticatedRequest(`${API_BASE_URL}/notes/like/${noteId}`, {
+      method: 'PUT',
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const note = await response.json();
+
+    return {
+      id: note._id || note.id,
+      title: note.title,
+      description: note.description,
+      content: note.content,
+      category: note.category,
+      tags: note.tags || [],
+      author: {
+        id: note.user || note.userId,
+        name: note.authorName || 'Anonymous',
+        avatar: note.authorAvatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Default'
+      },
+      createdAt: new Date(note.createdAt),
+      updatedAt: new Date(note.updatedAt),
+      likes: note.likes || 0,
+      comments: note.comments || 0,
+      downloads: note.downloads || 0
+    };
+  } catch (error) {
+    console.error('Error liking note:', error);
+    toast({
+      title: "Failed to like note",
+      description: error instanceof Error ? error.message : 'An unknown error occurred',
+      variant: "destructive"
+    });
+    return null;
+  }
+};
+
+export const deleteNote = async (noteId: string): Promise<boolean> => {
+  try {
+    const token = getAuthToken();
+    if (!token) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to delete notes",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    const response = await makeAuthenticatedRequest(`${API_BASE_URL}/notes/${noteId}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    toast({
+      title: "Success!",
+      description: "Note deleted successfully",
+    });
+
+    return true;
+  } catch (error) {
+    console.error('Error deleting note:', error);
+    toast({
+      title: "Failed to delete note",
+      description: error instanceof Error ? error.message : 'An unknown error occurred',
+      variant: "destructive"
+    });
+    return false;
+  }
+};
