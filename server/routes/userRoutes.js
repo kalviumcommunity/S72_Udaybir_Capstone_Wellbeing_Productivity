@@ -4,6 +4,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 
@@ -105,7 +106,28 @@ router.post('/reset-password', async (req, res) => {
 // @route   POST api/users/register
 // @desc    Register a user
 // @access  Public
-router.post('/register', async (req, res) => {
+router.post('/register', [
+  body('name').trim().isLength({ min: 2, max: 50 }).withMessage('Name must be between 2 and 50 characters'),
+  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email'),
+  body('password')
+    .isLength({ min: 8 })
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+    .withMessage('Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number'),
+  body('university').optional().trim().isLength({ max: 100 }),
+  body('major').optional().trim().isLength({ max: 100 }),
+  body('year').optional().trim().isLength({ max: 20 }),
+  body('gender').optional().isIn(['male', 'female', 'neutral']).withMessage('Gender must be male, female, or neutral'),
+  body('avatar').optional().isURL().withMessage('Avatar must be a valid URL')
+], async (req, res) => {
+  // Check for validation errors
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ 
+      message: 'Validation failed',
+      errors: errors.array()
+    });
+  }
+
   const { name, email, password, university, major, year, gender, avatar } = req.body;
 
   try {
