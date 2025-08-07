@@ -84,9 +84,17 @@ export const getNotes = async (): Promise<Note[]> => {
 
 export const getMyNotes = async (): Promise<Note[]> => {
   try {
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error('Authentication token not found');
+    }
+
     const response = await makeAuthenticatedRequest(`${API_BASE_URL}/notes/my-notes`);
     
     if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error('Authentication failed. Please log in again.');
+      }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
@@ -130,7 +138,8 @@ export const getGlobalNotes = async (): Promise<Note[]> => {
     }
 
     const notes = await response.json();
-    return notes.map((note: Record<string, unknown>) => ({
+    
+    const mappedNotes = notes.map((note: Record<string, unknown>) => ({
       id: note._id || note.id,
       title: note.title,
       description: note.description,
@@ -149,6 +158,8 @@ export const getGlobalNotes = async (): Promise<Note[]> => {
       comments: note.comments || 0,
       downloads: note.downloads || 0
     }));
+    
+    return mappedNotes;
   } catch (error) {
     console.error('Error fetching global notes:', error);
     toast({

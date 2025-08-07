@@ -10,27 +10,18 @@ import {
   MessageSquare, 
   Download, 
   Share2,
-  X
+  X,
+  RefreshCw
 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { cn } from '@/lib/utils';
 import { getNotes, createNote, getMyNotes, getGlobalNotes } from '@/services/noteService';
+import { getComments, addComment, deleteComment, type Comment as CommentType } from '@/services/commentService';
 import { useFormPersistence } from '@/hooks/useFormPersistence';
 
 import { toast } from '@/hooks/use-toast';
 
 // Types for our notes
-interface Comment {
-  id: string;
-  noteId: string;
-  content: string;
-  author: {
-    id: string;
-    name: string;
-    avatar: string;
-  };
-  createdAt: Date;
-}
 
 interface Note {
   id: string;
@@ -81,6 +72,10 @@ const NotesHub = () => {
   const [isCreatingNote, setIsCreatingNote] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'global' | 'my-notes'>('global');
+  const [comments, setComments] = useState<Record<string, CommentType[]>>({});
+  const [showComments, setShowComments] = useState<Record<string, boolean>>({});
+  const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
+  const [dataSource, setDataSource] = useState<'server' | 'cache'>('server');
   
   // New note form state with persistence
   const [newNote, setNewNote, clearNewNote] = useFormPersistence({
@@ -95,59 +90,75 @@ const NotesHub = () => {
     }
   });
 
-  // Load notes from localStorage or use mock data
+  // Load notes from API
   useEffect(() => {
     const loadNotes = async () => {
       setIsLoading(true);
       try {
         let apiNotes: Note[] = [];
         
-        if (viewMode === 'my-notes' && currentUser) {
+        // Check if user is authenticated for private notes
+        if (viewMode === 'my-notes') {
+          if (!currentUser) {
+            toast({
+              title: "Authentication required",
+              description: "Please log in to view your private notes",
+              variant: "destructive"
+            });
+            setNotes([]);
+            setIsLoading(false);
+            return;
+          }
+          
           // Load user's private notes
           apiNotes = await getMyNotes();
         } else {
-          // Load global notes
+          // Load global notes (no authentication required)
           apiNotes = await getGlobalNotes();
         }
         
-        if (apiNotes && apiNotes.length > 0) {
-          setNotes(apiNotes);
-        } else {
-          // Load from localStorage or use mock data
-          const storageKey = viewMode === 'my-notes' ? 'my_notes' : 'global_notes';
-          const storedNotes = localStorage.getItem(storageKey);
-          if (storedNotes) {
-            const parsedNotes = JSON.parse(storedNotes);
-            // Convert date strings back to Date objects
-            const notesWithDates = parsedNotes.map((note: Partial<Note> & { createdAt: string; updatedAt: string }) => ({
-              ...note,
-              createdAt: new Date(note.createdAt),
-              updatedAt: new Date(note.updatedAt)
-            } as Note));
-            setNotes(notesWithDates);
-          } else {
-            // First time: use mock data and save to localStorage
-            setNotes(mockNotes);
-            localStorage.setItem(storageKey, JSON.stringify(mockNotes));
-          }
-        }
+        // Always use API data if available, regardless of length
+        setNotes(apiNotes);
+        setDataSource('server');
+        
+        // Also save to localStorage as backup
+        const storageKey = viewMode === 'my-notes' ? 'my_notes' : 'global_notes';
+        localStorage.setItem(storageKey, JSON.stringify(apiNotes));
+        
       } catch (error) {
         console.error('Failed to fetch notes:', error);
-        // Load from localStorage or use mock data
-        const storageKey = viewMode === 'my-notes' ? 'my_notes' : 'global_notes';
-        const storedNotes = localStorage.getItem(storageKey);
-        if (storedNotes) {
-          const parsedNotes = JSON.parse(storedNotes);
-          const notesWithDates = parsedNotes.map((note: Partial<Note> & { createdAt: string; updatedAt: string }) => ({
-            ...note,
-            createdAt: new Date(note.createdAt),
-            updatedAt: new Date(note.updatedAt)
-          } as Note));
-          setNotes(notesWithDates);
-        } else {
-          setNotes(mockNotes);
-          localStorage.setItem(storageKey, JSON.stringify(mockNotes));
-        }
+        
+        // Check if it's an authentication error
+        if (error instanceof Error && error.message.includes('Authentication')) {
+          toast({
+            title: "Authentication required",
+            description: "Please log in to access your notes",
+            variant: "destructive"
+          });
+          setNotes([]);
+                  } else {
+            toast({
+              title: "Failed to load notes",
+              description: "Using cached data. Some features may be limited.",
+              variant: "destructive"
+            });
+            // Load from localStorage as fallback
+            const storageKey = viewMode === 'my-notes' ? 'my_notes' : 'global_notes';
+            const storedNotes = localStorage.getItem(storageKey);
+            if (storedNotes) {
+              const parsedNotes = JSON.parse(storedNotes);
+              const notesWithDates = parsedNotes.map((note: Partial<Note> & { createdAt: string; updatedAt: string }) => ({
+                ...note,
+                createdAt: new Date(note.createdAt),
+                updatedAt: new Date(note.updatedAt)
+              } as Note));
+              setNotes(notesWithDates);
+              setDataSource('cache');
+            } else {
+              setNotes([]);
+              setDataSource('server');
+            }
+          }
       } finally {
         setIsLoading(false);
       }
@@ -170,6 +181,7 @@ const NotesHub = () => {
       filtered = filtered.filter(note => 
         note.title.toLowerCase().includes(query) || 
         note.description.toLowerCase().includes(query) ||
+        note.content.toLowerCase().includes(query) ||
         note.tags.some(tag => tag.toLowerCase().includes(query))
       );
     }
@@ -196,43 +208,29 @@ const NotesHub = () => {
       return;
     }
     
-    // Try to create note with API
+    // Create note with API
     const createdNote = await createNote(newNote);
     
     if (createdNote) {
-      // Note was created via API
+      // Note was created via API - update state
       setNotes([createdNote, ...notes]);
-    } else {
-      // Fallback to mock creation
-      const newNoteObject: Note = {
-        id: Date.now().toString(), // Use timestamp for unique ID
-        title: newNote.title,
-        description: newNote.description,
-        content: newNote.content,
-        category: newNote.category,
-        tags: newNote.tags.split(',').map(tag => tag.trim()),
-        privacy: newNote.privacy,
-        author: {
-          id: currentUser.id,
-          name: currentUser.name,
-          avatar: currentUser.avatar
-        },
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        likes: 0,
-        comments: 0,
-        downloads: 0
-      };
       
-      const updatedNotes = [newNoteObject, ...notes];
-      setNotes(updatedNotes);
-      
-      // Save to global notes localStorage
-      localStorage.setItem('global_notes', JSON.stringify(updatedNotes));
+      // Also update localStorage for the appropriate view
+      const storageKey = createdNote.privacy === 'private' ? 'my_notes' : 'global_notes';
+      const currentStoredNotes = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      const updatedStoredNotes = [createdNote, ...currentStoredNotes];
+      localStorage.setItem(storageKey, JSON.stringify(updatedStoredNotes));
       
       toast({
         title: "Success!",
-        description: "Note created successfully and saved locally"
+        description: "Note created successfully"
+      });
+    } else {
+      // API failed - show error
+      toast({
+        title: "Failed to create note",
+        description: "Please try again later",
+        variant: "destructive"
       });
     }
     
@@ -242,11 +240,16 @@ const NotesHub = () => {
   };
   
   const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    try {
+      return new Date(date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Invalid date';
+    }
   };
 
   // Handle like/unlike a note
@@ -285,7 +288,7 @@ const NotesHub = () => {
   };
 
   // Handle adding a comment
-  const handleAddComment = (noteId: string, commentContent: string) => {
+  const handleAddComment = async (noteId: string, commentContent: string) => {
     if (!currentUser) {
       navigate('/login');
       return;
@@ -300,53 +303,121 @@ const NotesHub = () => {
       return;
     }
 
-    const newComment: Comment = {
-      id: Date.now().toString(),
-      noteId,
-      content: commentContent.trim(),
-      author: {
-        id: currentUser.id,
-        name: currentUser.name,
-        avatar: currentUser.avatar
-      },
-      createdAt: new Date()
-    };
+    const newComment = await addComment(noteId, commentContent);
+    
+    if (newComment) {
+      // Update comments for this note
+      const currentComments = comments[noteId] || [];
+      const updatedComments = [newComment, ...currentComments];
+      setComments(prev => ({ ...prev, [noteId]: updatedComments }));
 
-    // Save comment to localStorage
-    const storedComments = JSON.parse(localStorage.getItem('note_comments') || '[]');
-    storedComments.push(newComment);
-    localStorage.setItem('note_comments', JSON.stringify(storedComments));
+      // Update note comment count
+      const updatedNotes = notes.map(note => {
+        if (note.id === noteId) {
+          return { ...note, comments: note.comments + 1 };
+        }
+        return note;
+      });
+      setNotes(updatedNotes);
 
-    // Update note comment count
-    const updatedNotes = notes.map(note => {
-      if (note.id === noteId) {
-        return {
-          ...note,
-          comments: note.comments + 1
-        };
-      }
-      return note;
-    });
-
-    setNotes(updatedNotes);
-    localStorage.setItem('global_notes', JSON.stringify(updatedNotes));
-
-    toast({
-      title: "Success!",
-      description: "Comment added successfully"
-    });
+      // Clear comment input
+      setCommentInputs(prev => ({ ...prev, [noteId]: '' }));
+    }
   };
 
   // Get comments for a note
-  const getCommentsForNote = (noteId: string): Comment[] => {
-    const storedComments = JSON.parse(localStorage.getItem('note_comments') || '[]');
-    return storedComments
-      .filter((comment: Comment) => comment.noteId === noteId)
-      .map((comment: Partial<Comment> & { createdAt: string }) => ({
-        ...comment,
-        createdAt: new Date(comment.createdAt)
-      } as Comment))
-      .sort((a: Comment, b: Comment) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const getCommentsForNote = (noteId: string): CommentType[] => {
+    return comments[noteId] || [];
+  };
+
+  const loadCommentsForNote = async (noteId: string) => {
+    if (!comments[noteId]) {
+      const fetchedComments = await getComments(noteId);
+      setComments(prev => ({ ...prev, [noteId]: fetchedComments }));
+    }
+  };
+
+  const toggleComments = async (noteId: string) => {
+    if (!showComments[noteId]) {
+      await loadCommentsForNote(noteId);
+    }
+    setShowComments(prev => ({ ...prev, [noteId]: !prev[noteId] }));
+  };
+
+  const handleDownloadNote = (note: Note) => {
+    // Create a downloadable text file
+    const content = `Title: ${note.title}
+Description: ${note.description}
+Category: ${note.category}
+Tags: ${note.tags.join(', ')}
+Author: ${note.author.name}
+Created: ${formatDate(note.createdAt)}
+
+Content:
+${note.content}`;
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${note.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    // Update download count locally
+    const updatedNotes = notes.map(n => 
+      n.id === note.id ? { ...n, downloads: n.downloads + 1 } : n
+    );
+    setNotes(updatedNotes);
+
+    toast({
+      title: "Note downloaded",
+      description: "The note has been downloaded successfully",
+    });
+  };
+
+  const refreshNotes = async () => {
+    setIsLoading(true);
+    try {
+      let apiNotes: Note[] = [];
+      
+      if (viewMode === 'my-notes') {
+        if (!currentUser) {
+          toast({
+            title: "Authentication required",
+            description: "Please log in to view your private notes",
+            variant: "destructive"
+          });
+          setNotes([]);
+          return;
+        }
+        apiNotes = await getMyNotes();
+      } else {
+        apiNotes = await getGlobalNotes();
+      }
+      
+      setNotes(apiNotes);
+      
+      // Update localStorage
+      const storageKey = viewMode === 'my-notes' ? 'my_notes' : 'global_notes';
+      localStorage.setItem(storageKey, JSON.stringify(apiNotes));
+      
+      toast({
+        title: "Notes refreshed",
+        description: "Latest notes loaded from server",
+      });
+    } catch (error) {
+      console.error('Failed to refresh notes:', error);
+      toast({
+        title: "Failed to refresh notes",
+        description: "Please try again later",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
 
@@ -363,6 +434,11 @@ const NotesHub = () => {
             : 'Share and discover study notes from students around the world. Contribute your knowledge to help others learn!'
           }
         </p>
+        {dataSource === 'cache' && (
+          <p className="text-xs text-orange-500 mt-1">
+            ⚠️ Showing cached data. Click refresh to get latest notes.
+          </p>
+        )}
       </header>
       
 
@@ -436,6 +512,15 @@ const NotesHub = () => {
           >
             <Plus className="h-4 w-4" />
             Add Note
+          </button>
+          
+          <button
+            className="hub-button flex items-center gap-2"
+            onClick={refreshNotes}
+            disabled={isLoading}
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
           </button>
         </div>
       </div>
@@ -564,8 +649,8 @@ const NotesHub = () => {
       {isLoading && (
         <div className="flex justify-center items-center py-12">
           <div className="animate-pulse flex flex-col items-center">
-            <BookOpen className="h-12 w-12 text-muted-foreground/30 mb-4" />
-            <p className="text-muted-foreground">Loading notes...</p>
+            <RefreshCw className="h-12 w-12 text-muted-foreground/30 mb-4 animate-spin" />
+            <p className="text-muted-foreground">Loading notes from server...</p>
           </div>
         </div>
       )}
@@ -646,17 +731,98 @@ const NotesHub = () => {
                       }`} />
                       {note.likes}
                     </button>
-                    <div className="flex items-center text-xs text-muted-foreground">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleComments(note.id);
+                      }}
+                      className="flex items-center text-xs text-muted-foreground hover:text-primary transition-colors"
+                    >
                       <MessageSquare className="h-3.5 w-3.5 mr-1" />
                       {note.comments}
-                    </div>
-                    <div className="flex items-center text-xs text-muted-foreground">
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleDownloadNote(note);
+                      }}
+                      className="flex items-center text-xs text-muted-foreground hover:text-primary transition-colors"
+                    >
                       <Download className="h-3.5 w-3.5 mr-1" />
                       {note.downloads}
-                    </div>
+                    </button>
                   </div>
                   <Share2 className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
+                
+                {/* Comments Section */}
+                {showComments[note.id] && (
+                  <div className="border-t border-border pt-4 mt-4">
+                    <div className="space-y-3">
+                      {/* Comment Input */}
+                      {currentUser && (
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            placeholder="Add a comment..."
+                            value={commentInputs[note.id] || ''}
+                            onChange={(e) => setCommentInputs(prev => ({ ...prev, [note.id]: e.target.value }))}
+                            className="flex-1 hub-input text-sm"
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter' && commentInputs[note.id]?.trim()) {
+                                handleAddComment(note.id, commentInputs[note.id] || '');
+                              }
+                            }}
+                          />
+                          <button
+                            onClick={() => handleAddComment(note.id, commentInputs[note.id] || '')}
+                            disabled={!commentInputs[note.id]?.trim()}
+                            className="hub-button text-sm px-3 py-1 disabled:opacity-50"
+                          >
+                            Add
+                          </button>
+                        </div>
+                      )}
+                      
+                      {/* Comments List */}
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {getCommentsForNote(note.id).map((comment) => (
+                          <div key={comment.id} className="flex gap-2 p-2 bg-muted/30 rounded-md">
+                            <img 
+                              src={comment.author.avatar} 
+                              alt={comment.author.name} 
+                              className="w-6 h-6 rounded-full flex-shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-medium">{comment.author.name}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {formatDate(comment.createdAt)}
+                                </span>
+                                {currentUser?.id === comment.author.id && (
+                                  <button
+                                    onClick={() => deleteComment(comment.id)}
+                                    className="text-xs text-red-500 hover:text-red-700"
+                                  >
+                                    Delete
+                                  </button>
+                                )}
+                              </div>
+                              <p className="text-xs mt-1">{comment.content}</p>
+                            </div>
+                          </div>
+                        ))}
+                        {getCommentsForNote(note.id).length === 0 && (
+                          <p className="text-xs text-muted-foreground text-center py-2">
+                            No comments yet. Be the first to comment!
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ))}
