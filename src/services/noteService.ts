@@ -10,6 +10,7 @@ export interface Note {
   content: string;
   category: string;
   tags: string[];
+  privacy: 'private' | 'global';
   author: {
     id: string;
     name: string;
@@ -58,10 +59,11 @@ export const getNotes = async (): Promise<Note[]> => {
       content: note.content,
       category: note.category,
       tags: note.tags || [],
+      privacy: note.privacy || 'private',
       author: {
-        id: note.user || note.userId,
-        name: note.authorName || 'Anonymous',
-        avatar: note.authorAvatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Default'
+        id: note.author?.id || note.user || note.userId,
+        name: note.author?.name || note.authorName || 'Anonymous',
+        avatar: note.author?.avatar || note.authorAvatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Default'
       },
       createdAt: new Date(note.createdAt),
       updatedAt: new Date(note.updatedAt),
@@ -73,6 +75,84 @@ export const getNotes = async (): Promise<Note[]> => {
     console.error('Error fetching notes:', error);
     toast({
       title: "Failed to load notes",
+      description: error instanceof Error ? error.message : 'An unknown error occurred',
+      variant: "destructive"
+    });
+    return [];
+  }
+};
+
+export const getMyNotes = async (): Promise<Note[]> => {
+  try {
+    const response = await makeAuthenticatedRequest(`${API_BASE_URL}/notes/my-notes`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const notes = await response.json();
+    return notes.map((note: Record<string, unknown>) => ({
+      id: note._id || note.id,
+      title: note.title,
+      description: note.description,
+      content: note.content,
+      category: note.category,
+      tags: note.tags || [],
+      privacy: note.privacy || 'private',
+      author: {
+        id: note.author?.id || note.user || note.userId,
+        name: note.author?.name || note.authorName || 'Anonymous',
+        avatar: note.author?.avatar || note.authorAvatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Default'
+      },
+      createdAt: new Date(note.createdAt),
+      updatedAt: new Date(note.updatedAt),
+      likes: note.likes || 0,
+      comments: note.comments || 0,
+      downloads: note.downloads || 0
+    }));
+  } catch (error) {
+    console.error('Error fetching my notes:', error);
+    toast({
+      title: "Failed to load your notes",
+      description: error instanceof Error ? error.message : 'An unknown error occurred',
+      variant: "destructive"
+    });
+    return [];
+  }
+};
+
+export const getGlobalNotes = async (): Promise<Note[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/notes/global`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const notes = await response.json();
+    return notes.map((note: Record<string, unknown>) => ({
+      id: note._id || note.id,
+      title: note.title,
+      description: note.description,
+      content: note.content,
+      category: note.category,
+      tags: note.tags || [],
+      privacy: note.privacy || 'global',
+      author: {
+        id: note.author?.id || note.user || note.userId,
+        name: note.author?.name || note.authorName || 'Anonymous',
+        avatar: note.author?.avatar || note.authorAvatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Default'
+      },
+      createdAt: new Date(note.createdAt),
+      updatedAt: new Date(note.updatedAt),
+      likes: note.likes || 0,
+      comments: note.comments || 0,
+      downloads: note.downloads || 0
+    }));
+  } catch (error) {
+    console.error('Error fetching global notes:', error);
+    toast({
+      title: "Failed to load global notes",
       description: error instanceof Error ? error.message : 'An unknown error occurred',
       variant: "destructive"
     });
@@ -127,6 +207,7 @@ export const createNote = async (noteData: {
   content: string;
   category: string;
   tags: string;
+  privacy: 'private' | 'global';
 }): Promise<Note | null> => {
   try {
     const token = getAuthToken();
@@ -148,6 +229,7 @@ export const createNote = async (noteData: {
         description: noteData.description,
         content: noteData.content,
         category: noteData.category,
+        privacy: noteData.privacy,
         tags: tagsArray,
       }),
     });

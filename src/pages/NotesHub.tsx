@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { cn } from '@/lib/utils';
-import { getNotes, createNote } from '@/services/noteService';
+import { getNotes, createNote, getMyNotes, getGlobalNotes } from '@/services/noteService';
 import { useFormPersistence } from '@/hooks/useFormPersistence';
 
 import { toast } from '@/hooks/use-toast';
@@ -39,6 +39,7 @@ interface Note {
   content: string;
   category: string;
   tags: string[];
+  privacy: 'private' | 'global';
   author: {
     id: string;
     name: string;
@@ -89,7 +90,8 @@ const NotesHub = () => {
       description: '',
       content: '',
       category: 'Computer Science',
-      tags: ''
+      tags: '',
+      privacy: 'private' as 'private' | 'global'
     }
   });
 
@@ -98,13 +100,22 @@ const NotesHub = () => {
     const loadNotes = async () => {
       setIsLoading(true);
       try {
-        // Try to get notes from API first
-        const apiNotes = await getNotes();
+        let apiNotes: Note[] = [];
+        
+        if (viewMode === 'my-notes' && currentUser) {
+          // Load user's private notes
+          apiNotes = await getMyNotes();
+        } else {
+          // Load global notes
+          apiNotes = await getGlobalNotes();
+        }
+        
         if (apiNotes && apiNotes.length > 0) {
           setNotes(apiNotes);
         } else {
           // Load from localStorage or use mock data
-          const storedNotes = localStorage.getItem('global_notes');
+          const storageKey = viewMode === 'my-notes' ? 'my_notes' : 'global_notes';
+          const storedNotes = localStorage.getItem(storageKey);
           if (storedNotes) {
             const parsedNotes = JSON.parse(storedNotes);
             // Convert date strings back to Date objects
@@ -117,13 +128,14 @@ const NotesHub = () => {
           } else {
             // First time: use mock data and save to localStorage
             setNotes(mockNotes);
-            localStorage.setItem('global_notes', JSON.stringify(mockNotes));
+            localStorage.setItem(storageKey, JSON.stringify(mockNotes));
           }
         }
       } catch (error) {
         console.error('Failed to fetch notes:', error);
         // Load from localStorage or use mock data
-        const storedNotes = localStorage.getItem('global_notes');
+        const storageKey = viewMode === 'my-notes' ? 'my_notes' : 'global_notes';
+        const storedNotes = localStorage.getItem(storageKey);
         if (storedNotes) {
           const parsedNotes = JSON.parse(storedNotes);
           const notesWithDates = parsedNotes.map((note: Partial<Note> & { createdAt: string; updatedAt: string }) => ({
@@ -134,7 +146,7 @@ const NotesHub = () => {
           setNotes(notesWithDates);
         } else {
           setNotes(mockNotes);
-          localStorage.setItem('global_notes', JSON.stringify(mockNotes));
+          localStorage.setItem(storageKey, JSON.stringify(mockNotes));
         }
       } finally {
         setIsLoading(false);
@@ -142,7 +154,7 @@ const NotesHub = () => {
     };
 
     loadNotes();
-  }, [currentUser]);
+  }, [currentUser, viewMode]);
   
   // Filter notes based on search query and category
   useEffect(() => {
@@ -199,6 +211,7 @@ const NotesHub = () => {
         content: newNote.content,
         category: newNote.category,
         tags: newNote.tags.split(',').map(tag => tag.trim()),
+        privacy: newNote.privacy,
         author: {
           id: currentUser.id,
           name: currentUser.name,
@@ -498,6 +511,34 @@ const NotesHub = () => {
                   onChange={(e) => setNewNote({...newNote, tags: e.target.value})}
                   placeholder="e.g., algorithms, sorting, data structures"
                 />
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1">Privacy</label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="privacy"
+                    value="private"
+                    checked={newNote.privacy === 'private'}
+                    onChange={(e) => setNewNote({...newNote, privacy: e.target.value as 'private' | 'global'})}
+                    className="text-primary"
+                  />
+                  <span className="text-sm">Private (Only you can see)</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="privacy"
+                    value="global"
+                    checked={newNote.privacy === 'global'}
+                    onChange={(e) => setNewNote({...newNote, privacy: e.target.value as 'private' | 'global'})}
+                    className="text-primary"
+                  />
+                  <span className="text-sm">Global (Visible to everyone)</span>
+                </label>
               </div>
             </div>
             

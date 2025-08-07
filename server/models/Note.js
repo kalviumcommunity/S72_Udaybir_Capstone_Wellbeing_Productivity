@@ -23,6 +23,11 @@ const NoteSchema = new Schema({
     type: [String],
     default: []
   },
+  privacy: {
+    type: String,
+    enum: ['private', 'global'],
+    default: 'private'
+  },
   author: {
     id: {
       type: Schema.Types.ObjectId,
