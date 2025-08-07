@@ -73,6 +73,7 @@ mongoose.connect(mongoUri, {
 // Import Route Files
 const userRoutes = require('./routes/userRoutes');
 const noteRoutes = require('./routes/noteRoutes');
+const commentRoutes = require('./routes/commentRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const moodRoutes = require('./routes/moodRoutes');
 const studyRoutes = require('./routes/studyRoutes');
@@ -81,6 +82,7 @@ const focusRoutes = require('./routes/focusRoutes');
 // Use Routes
 app.use('/api/users', userRoutes);
 app.use('/api/notes', noteRoutes);
+app.use('/api/comments', commentRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/mood', moodRoutes);
 app.use('/api/study-sessions', studyRoutes);
