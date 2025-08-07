@@ -188,6 +188,15 @@ router.post('/register', async (req, res) => {
       });
     }
     
+    // Check if it's a duplicate key error (username index issue)
+    if (err.code === 11000) {
+      console.log('Duplicate key error detected:', err.message);
+      return res.status(400).json({ 
+        message: 'User with this email already exists',
+        error: 'Duplicate email'
+      });
+    }
+    
     res.status(500).json({ 
       message: 'Server error',
       error: err.message
