@@ -43,7 +43,7 @@ const ResetPassword = () => {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:8000/api/users/reset-password', {
+      const response = await fetch('https://sentience.onrender.com/api/users/reset-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

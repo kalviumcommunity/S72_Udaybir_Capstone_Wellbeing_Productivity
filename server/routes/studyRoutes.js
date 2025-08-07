@@ -92,7 +92,7 @@ router.delete('/:id', auth, async (req, res) => {
       return res.status(401).json({ message: 'User not authorized' });
     }
     
-    await studySession.remove();
+    await StudySession.findByIdAndDelete(req.params.id);
     res.json({ message: 'Study session removed' });
   } catch (err) {
     console.error(err.message);
