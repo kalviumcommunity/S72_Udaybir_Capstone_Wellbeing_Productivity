@@ -169,8 +169,29 @@ router.post('/register', async (req, res) => {
       }
     );
   } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ message: 'Server error' });
+    console.error('User registration error:', err.message);
+    console.error('Error details:', err);
+    
+    // Check if it's a MongoDB connection error
+    if (err.name === 'MongoNetworkError' || err.name === 'MongoServerSelectionError') {
+      return res.status(500).json({ 
+        message: 'Database connection error. Please try again later.',
+        error: 'MongoDB connection failed'
+      });
+    }
+    
+    // Check if it's a validation error
+    if (err.name === 'ValidationError') {
+      return res.status(400).json({ 
+        message: 'Validation error',
+        error: err.message
+      });
+    }
+    
+    res.status(500).json({ 
+      message: 'Server error',
+      error: err.message
+    });
   }
 });
 

@@ -25,12 +25,24 @@ app.use(express.json());
 // MongoDB Connection
 const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/Capstone';
 console.log('Connecting to MongoDB:', mongoUri);
+
 mongoose.connect(mongoUri, {
   useNewUrlParser: true,
-  useUnifiedTopology: true
+  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
 })
-.then(() => console.log('MongoDB Connected'))
-.catch(err => console.log('MongoDB Connection Error:', err));
+.then(() => {
+  console.log('✅ MongoDB Connected Successfully');
+  console.log('Database URI:', mongoUri.replace(/\/\/.*@/, '//***:***@')); // Hide credentials
+})
+.catch(err => {
+  console.error('❌ MongoDB Connection Error:', err.message);
+  console.error('Error details:', err);
+  
+  // Don't exit the process, let it continue but log the error
+  console.log('⚠️  Server will start but database operations may fail');
+});
 
 // Import Route Files
 const userRoutes = require('./routes/userRoutes');
