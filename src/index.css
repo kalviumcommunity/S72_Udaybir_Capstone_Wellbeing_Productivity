@@ -257,3 +257,14 @@
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-muted-foreground/30;
 }
+
+@layer utilities {
+  @keyframes floaty {
+    0% { transform: translateY(0) translateX(0) scale(1); }
+    50% { transform: translateY(-20px) translateX(10px) scale(1.03); }
+    100% { transform: translateY(0) translateX(0) scale(1); }
+  }
+  .animate-float-slow { animation: floaty 18s ease-in-out infinite; }
+  .animate-float-slower { animation: floaty 24s ease-in-out infinite; }
+  .animate-float-slowest { animation: floaty 30s ease-in-out infinite; }
+}
