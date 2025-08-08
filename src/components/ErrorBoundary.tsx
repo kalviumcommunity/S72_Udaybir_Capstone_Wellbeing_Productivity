@@ -21,7 +21,10 @@ class ErrorBoundaryClass extends Component<Props & { navigate: (path: string) =>
   }
 
   static getDerivedStateFromError(error: Error): State {
-    const errorId = Math.random().toString(36).substr(2, 9);
+    // Generate a more secure error ID using crypto
+    const array = new Uint8Array(8);
+    crypto.getRandomValues(array);
+    const errorId = Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
     return { hasError: true, error, errorId };
   }
 
@@ -55,8 +58,16 @@ class ErrorBoundaryClass extends Component<Props & { navigate: (path: string) =>
       // In a real app, you'd send this to an error reporting service
       console.log('Reporting error:', { errorId, error: error.message, stack: error.stack });
       
-      // For now, just show a toast or alert
-      alert(`Error reported with ID: ${errorId}. Please contact support if this persists.`);
+      // Show toast notification instead of alert
+      import('@/hooks/use-toast').then(({ toast }) => {
+        toast({
+          title: "Error Reported",
+          description: `Error ID: ${errorId}. Our team has been notified.`,
+        });
+      }).catch(() => {
+        // Fallback to alert if toast is not available
+        alert(`Error reported with ID: ${errorId}. Please contact support if this persists.`);
+      });
     }
   };
 

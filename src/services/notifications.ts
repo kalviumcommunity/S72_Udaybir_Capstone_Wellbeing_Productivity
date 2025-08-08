@@ -158,23 +158,31 @@ class NotificationService {
     });
   }
 
+  private intervals: NodeJS.Timeout[] = [];
+
   // Start periodic notifications
   startPeriodicNotifications(): void {
     // Check due tasks every hour
-    setInterval(() => {
+    const taskInterval = setInterval(() => {
       this.checkDueTasks();
     }, 60 * 60 * 1000);
+    this.intervals.push(taskInterval);
 
     // Show study reminder every 4 hours (if user is active)
-    setInterval(() => {
-      const lastActivity = localStorage.getItem('lastActivity');
-      if (lastActivity) {
-        const timeSinceActivity = Date.now() - parseInt(lastActivity);
-        if (timeSinceActivity > 4 * 60 * 60 * 1000) { // 4 hours
-          this.showStudyReminder();
+    const studyInterval = setInterval(() => {
+      try {
+        const lastActivity = localStorage.getItem('lastActivity');
+        if (lastActivity) {
+          const timeSinceActivity = Date.now() - parseInt(lastActivity);
+          if (timeSinceActivity > 4 * 60 * 60 * 1000) { // 4 hours
+            this.showStudyReminder();
+          }
         }
+      } catch (error) {
+        console.error('Error in study reminder interval:', error);
       }
     }, 4 * 60 * 60 * 1000);
+    this.intervals.push(studyInterval);
 
     // Show mood reminder daily at 6 PM
     const now = new Date();
@@ -184,13 +192,24 @@ class NotificationService {
     }
     
     const timeUntilTarget = targetTime.getTime() - now.getTime();
-    setTimeout(() => {
+    const moodTimeout = setTimeout(() => {
       this.showMoodReminder();
       // Then repeat daily
-      setInterval(() => {
+      const moodInterval = setInterval(() => {
         this.showMoodReminder();
       }, 24 * 60 * 60 * 1000);
+      this.intervals.push(moodInterval);
     }, timeUntilTarget);
+    this.intervals.push(moodTimeout as NodeJS.Timeout);
+  }
+
+  // Stop all periodic notifications
+  stopPeriodicNotifications(): void {
+    this.intervals.forEach(interval => {
+      clearInterval(interval);
+      clearTimeout(interval);
+    });
+    this.intervals = [];
   }
 
   // Update last activity timestamp

@@ -17,9 +17,13 @@ export default defineConfig({
         manualChunks: {
           vendor: ["react", "react-dom"],
           ui: ["@radix-ui/react-dialog", "@radix-ui/react-dropdown-menu", "@radix-ui/react-toast"],
+          charts: ["recharts"],
+          utils: ["clsx", "class-variance-authority", "tailwind-merge"],
+          icons: ["lucide-react"],
         },
       },
     },
+    chunkSizeWarningLimit: 1000,
   },
   plugins: [
     react(),

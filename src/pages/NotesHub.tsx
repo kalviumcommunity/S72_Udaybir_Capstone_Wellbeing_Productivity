@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   BookOpen, 
-  Search, 
   Filter, 
   Plus, 
   ThumbsUp, 
@@ -18,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { getNotes, createNote, getMyNotes, getGlobalNotes } from '@/services/noteService';
 import { getComments, addComment, deleteComment, type Comment as CommentType } from '@/services/commentService';
 import { useFormPersistence } from '@/hooks/useFormPersistence';
+import { sanitizeNoteContent, sanitizeText } from '@/utils/sanitize';
 
 import { toast } from '@/hooks/use-toast';
 
@@ -65,7 +65,6 @@ const mockNotes: Note[] = [];
 const NotesHub = () => {
   const { currentUser } = useUser();
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [notes, setNotes] = useState<Note[]>([]);
   const [filteredNotes, setFilteredNotes] = useState<Note[]>([]);
@@ -167,7 +166,7 @@ const NotesHub = () => {
     loadNotes();
   }, [currentUser, viewMode]);
   
-  // Filter notes based on search query and category
+  // Filter notes based on category
   useEffect(() => {
     let filtered = [...notes];
     
@@ -176,22 +175,12 @@ const NotesHub = () => {
       filtered = filtered.filter(note => note.author.id === currentUser.id);
     }
     
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(note => 
-        note.title.toLowerCase().includes(query) || 
-        note.description.toLowerCase().includes(query) ||
-        note.content.toLowerCase().includes(query) ||
-        note.tags.some(tag => tag.toLowerCase().includes(query))
-      );
-    }
-    
     if (selectedCategory !== 'All') {
       filtered = filtered.filter(note => note.category === selectedCategory);
     }
     
     setFilteredNotes(filtered);
-  }, [searchQuery, selectedCategory, notes, viewMode, currentUser]);
+  }, [selectedCategory, notes, viewMode, currentUser]);
   
   const handleCreateNote = async () => {
     if (!currentUser) {
@@ -207,9 +196,17 @@ const NotesHub = () => {
       });
       return;
     }
+
+    // Sanitize note content
+    const sanitizedNote = {
+      ...newNote,
+      title: sanitizeText(newNote.title),
+      description: sanitizeText(newNote.description),
+      content: sanitizeNoteContent(newNote.content)
+    };
     
     // Create note with API
-    const createdNote = await createNote(newNote);
+    const createdNote = await createNote(sanitizedNote);
     
     if (createdNote) {
       // Note was created via API - update state
@@ -473,21 +470,8 @@ ${note.content}`;
         </div>
       )}
 
-      {/* Search and filters */}
+      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4 mb-8">
-        <div className="relative flex-grow">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-muted-foreground" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search notes by title, description, or tags..."
-            className="hub-input pl-10"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        
         <div className="flex gap-2">
           <div className="relative">
             <select
@@ -831,11 +815,11 @@ ${note.content}`;
         <div className="hub-card p-8 text-center">
           <BookOpen className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
           <h3 className="text-xl font-medium mb-2">
-            {searchQuery || selectedCategory !== 'All' ? "No notes found" : "No notes yet"}
+            {selectedCategory !== 'All' ? "No notes found" : "No notes yet"}
           </h3>
           <p className="text-muted-foreground mb-4">
-            {searchQuery || selectedCategory !== 'All'
-              ? "Try adjusting your search or category filters"
+            {selectedCategory !== 'All'
+              ? "Try adjusting your category filters"
               : currentUser && viewMode === 'my-notes'
                 ? "Start creating your first study note to organize your learning"
                 : "Be the first to contribute study notes to the global community!"

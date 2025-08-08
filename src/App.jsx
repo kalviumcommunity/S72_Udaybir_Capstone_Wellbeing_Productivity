@@ -11,23 +11,26 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { dataSyncService } from "./services/dataSync";
 import { notificationService } from "./services/notifications";
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
+import { LoadingSpinner } from "./components/LoadingSpinner";
 
 import Navbar from "./components/Navbar";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound";
-import NotesHub from "./pages/NotesHub.tsx";
-import Profile from "./pages/Profile.tsx";
-import NoteDetail from "./pages/NoteDetail.tsx";
-import StudyPlanner from "./pages/StudyPlanner.tsx";
-import TaskTracker from "./pages/TaskTracker.tsx";
-import FocusMode from "./pages/FocusMode.tsx";
-import MoodTracker from "./pages/MoodTracker.tsx";
-import Analytics from "./pages/Analytics.tsx";
 import Signup from "./pages/Signup.tsx";
 import Login from "./pages/Login.tsx";
 import ForgotPassword from "./pages/ForgotPassword.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
+
+// Lazy load heavy components
+const NotesHub = React.lazy(() => import("./pages/NotesHub.tsx"));
+const Profile = React.lazy(() => import("./pages/Profile.tsx"));
+const NoteDetail = React.lazy(() => import("./pages/NoteDetail.tsx"));
+const StudyPlanner = React.lazy(() => import("./pages/StudyPlanner.tsx"));
+const TaskTracker = React.lazy(() => import("./pages/TaskTracker.tsx"));
+const FocusMode = React.lazy(() => import("./pages/FocusMode.tsx"));
+const MoodTracker = React.lazy(() => import("./pages/MoodTracker.tsx"));
+const Analytics = React.lazy(() => import("./pages/Analytics.tsx"));
 
 const queryClient = new QueryClient();
 
@@ -87,14 +90,14 @@ const AppLayout = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/notes" element={<ProtectedRoute><NotesHub /></ProtectedRoute>} />
-          <Route path="/notes/:noteId" element={<ProtectedRoute><NoteDetail /></ProtectedRoute>} />
-          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          <Route path="/study-planner" element={<ProtectedRoute><StudyPlanner /></ProtectedRoute>} />
-          <Route path="/tasks" element={<ProtectedRoute><TaskTracker /></ProtectedRoute>} />
-          <Route path="/focus" element={<ProtectedRoute><FocusMode /></ProtectedRoute>} />
-          <Route path="/mood" element={<ProtectedRoute><MoodTracker /></ProtectedRoute>} />
-          <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+          <Route path="/notes" element={<ProtectedRoute><Suspense fallback={<LoadingSpinner />}><NotesHub /></Suspense></ProtectedRoute>} />
+          <Route path="/notes/:noteId" element={<ProtectedRoute><Suspense fallback={<LoadingSpinner />}><NoteDetail /></Suspense></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><Suspense fallback={<LoadingSpinner />}><Profile /></Suspense></ProtectedRoute>} />
+          <Route path="/study-planner" element={<ProtectedRoute><Suspense fallback={<LoadingSpinner />}><StudyPlanner /></Suspense></ProtectedRoute>} />
+          <Route path="/tasks" element={<ProtectedRoute><Suspense fallback={<LoadingSpinner />}><TaskTracker /></Suspense></ProtectedRoute>} />
+          <Route path="/focus" element={<ProtectedRoute><Suspense fallback={<LoadingSpinner />}><FocusMode /></Suspense></ProtectedRoute>} />
+          <Route path="/mood" element={<ProtectedRoute><Suspense fallback={<LoadingSpinner />}><MoodTracker /></Suspense></ProtectedRoute>} />
+          <Route path="/analytics" element={<ProtectedRoute><Suspense fallback={<LoadingSpinner />}><Analytics /></Suspense></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
