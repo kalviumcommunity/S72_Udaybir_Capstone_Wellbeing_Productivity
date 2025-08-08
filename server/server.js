@@ -11,7 +11,8 @@ require('dotenv').config();
 const app = express();
 
 // Trust proxy (Render/Cloudflare) so rate limiter can use X-Forwarded-For
-app.set('trust proxy', true);
+// We are typically behind Cloudflare and Render → ~2 proxy hops
+app.set('trust proxy', 2);
 
 const PORT = process.env.PORT || 8000;
 
@@ -41,12 +42,23 @@ app.use('/api/', (req, res, next) => {
 });
 
 // CORS middleware
+const allowedOrigins = [
+  'https://sentiencehub.netlify.app',
+  'http://localhost:3000',
+  'http://localhost:4173'
+];
+const allowedOriginRegexes = [
+  /^https:\/\/deploy-preview-\d+--sentiencehub\.netlify\.app$/
+];
+
 app.use(cors({
-  origin: [
-    'https://sentiencehub.netlify.app',
-    'http://localhost:3000',
-    'http://localhost:4173'
-  ],
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true); // allow non-browser or same-origin
+    if (allowedOrigins.includes(origin) || allowedOriginRegexes.some((re) => re.test(origin))) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'x-auth-token', 'Authorization'],

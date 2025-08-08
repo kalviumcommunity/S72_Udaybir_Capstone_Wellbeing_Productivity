@@ -8,6 +8,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Calendar, Clock, TrendingUp, Target, Activity, BarChart3 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { taskAPI, moodAPI, studyAPI, focusAPI } from '@/services/api';
+import { toast } from '@/hooks/use-toast';
 
 // Type definitions
 interface MoodEntry {
@@ -71,19 +72,27 @@ const Analytics = () => {
   useEffect(() => {
     const initializeData = async () => {
       try {
-        // Check if API is available
+        // Check API is up
         const response = await fetch('https://sentience.onrender.com/api/health');
         setApiAvailable(response.ok);
         
-        if (response.ok && currentUser) {
-          // Load data from API
+        if (currentUser) {
+          if (!response.ok) {
+            toast({
+              title: 'Analytics unavailable',
+              description: 'Server is unreachable. Please try again shortly.',
+              variant: 'destructive'
+            });
+            setData({ tasks: [], moodEntries: [], studySessions: [], focusSessions: [] });
+            return;
+          }
+          // Always load user-specific data from API when logged in
           const [apiTasks, apiMoodEntries, apiStudySessions, apiFocusSessions] = await Promise.all([
             taskAPI.getAll().catch(() => []),
             moodAPI.getAll().catch(() => []),
             studyAPI.getAll().catch(() => []),
             focusAPI.getAll().catch(() => [])
           ]);
-          
           setData({
             tasks: apiTasks,
             moodEntries: apiMoodEntries,
@@ -91,33 +100,19 @@ const Analytics = () => {
             focusSessions: apiFocusSessions
           });
         } else {
-          // Fallback to localStorage
-          const storedTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-          const storedMoodEntries = JSON.parse(localStorage.getItem('moodEntries') || '[]');
-          const storedStudySessions = JSON.parse(localStorage.getItem('studySessions') || '[]');
-          const storedFocusSessions = JSON.parse(localStorage.getItem('focusSessions') || '[]');
-          
-          setData({
-            tasks: storedTasks,
-            moodEntries: storedMoodEntries,
-            studySessions: storedStudySessions,
-            focusSessions: storedFocusSessions
-          });
+          // Anonymous users: show empty analytics (no localStorage aggregation)
+          setData({ tasks: [], moodEntries: [], studySessions: [], focusSessions: [] });
         }
       } catch (error) {
         console.error('Error loading analytics data:', error);
-        // Fallback to localStorage
-        const storedTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-        const storedMoodEntries = JSON.parse(localStorage.getItem('moodEntries') || '[]');
-        const storedStudySessions = JSON.parse(localStorage.getItem('studySessions') || '[]');
-        const storedFocusSessions = JSON.parse(localStorage.getItem('focusSessions') || '[]');
-        
-        setData({
-          tasks: storedTasks,
-          moodEntries: storedMoodEntries,
-          studySessions: storedStudySessions,
-          focusSessions: storedFocusSessions
-        });
+        if (currentUser) {
+          toast({
+            title: 'Failed to load analytics',
+            description: 'We could not load your data from the server.',
+            variant: 'destructive'
+          });
+        }
+        setData({ tasks: [], moodEntries: [], studySessions: [], focusSessions: [] });
       } finally {
         setIsLoading(false);
       }
