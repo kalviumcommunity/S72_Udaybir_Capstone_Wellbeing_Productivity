@@ -19,7 +19,8 @@ import {
   GraduationCap,
   Building,
   LogIn,
-  Timer
+  Timer,
+  ArrowRight
 } from "lucide-react";
 
 const FeatureCard = ({ icon: Icon, title, description, href, gradient }) => (
@@ -99,11 +100,18 @@ const Index = () => {
               Your all‑in‑one student productivity hub. Track studies and tasks, stay focused, and gain insights from your real activity.
             </p>
             <div className="flex items-center gap-3 mt-2">
-              <Link to="/signup" className="hub-button">
-                Get started free
+              <Link to="/signup" className="hub-button group relative overflow-hidden transition-all duration-300 hover:scale-[1.03]">
+                <span className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-30 bg-gradient-to-r from-primary to-purple-500 blur-xl transition-opacity duration-300" />
+                <span className="relative flex items-center gap-2">
+                  Get started
+                  <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+                </span>
               </Link>
-              <Link to="/login" className="hub-button-outline px-4 py-2 rounded-md">
-                I already have an account
+              <Link to="/login" className="hub-button-outline px-4 py-2 rounded-md group transition-all duration-300 hover:scale-[1.02] hover:border-primary/50">
+                <span className="relative flex items-center gap-2">
+                  I already have an account
+                  <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+                </span>
               </Link>
             </div>
           </section>
@@ -112,7 +120,7 @@ const Index = () => {
     );
   }
 
-  // Logged-in experience (existing rich landing)
+  // Logged-in experience (dashboard)
   const features = [
     {
       icon: BookOpen,
@@ -159,16 +167,33 @@ const Index = () => {
   ];
 
   const stats = [
-    { icon: Target, value: "0%", label: "Task Completion", color: "bg-green-500" },
-    { icon: Clock, value: "0h", label: "Study Time", color: "bg-blue-500" },
-    { icon: Star, value: "0", label: "Avg. Mood", color: "bg-yellow-500" },
-    { icon: BookOpen, value: "0", label: "Notes Created", color: "bg-purple-500" }
+    { icon: Target, value: "Welcome", label: `Hi, ${currentUser.name.split(' ')[0]}` , color: "bg-primary" },
+    { icon: Clock, value: "—", label: "Keep up the great work!", color: "bg-blue-500" },
+    { icon: Star, value: "—", label: "Tip: Try Focus Mode", color: "bg-yellow-500" },
+    { icon: BookOpen, value: "—", label: "Add a new note today", color: "bg-purple-500" }
   ];
 
   return (
     <div className="page-container">
-      {/* Existing content for logged-in users remains unchanged */}
-      {/* ... existing rich dashboard-like landing content ... */}
+      {/* Welcome */}
+      <header className="mb-8 animate-slide-in">
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-muted-foreground mt-1">Quick links and stats to help you get started.</p>
+      </header>
+
+      {/* Stats */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {stats.map((s, i) => (
+          <StatCard key={i} icon={s.icon} value={s.value} label={s.label} color={s.color} />
+        ))}
+      </section>
+
+      {/* Features */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {features.map((f, i) => (
+          <FeatureCard key={i} icon={f.icon} title={f.title} description={f.description} href={f.href} gradient={f.gradient} />)
+        )}
+      </section>
     </div>
   );
 };
