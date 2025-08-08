@@ -83,6 +83,10 @@
   .hub-card {
     @apply bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden transition-all duration-300 hover:shadow-md hover:border-primary/20;
   }
+  /* Ensure dark mode card background is dark for proper text contrast */
+  .dark .hub-card {
+    @apply bg-neutral-900 border-border/50;
+  }
   
   .sentience-card {
     @apply bg-card rounded-lg border border-border/50 shadow-sm transition-all duration-300 hover:shadow-md;
