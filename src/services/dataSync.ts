@@ -173,14 +173,20 @@ class DataSyncService {
     }
   }
 
-  // Start automatic sync
-  startAutoSync(intervalMs: number = 30000): void {
+  // Start automatic sync with debouncing
+  startAutoSync(intervalMs: number = 60000): void { // Increased to 60 seconds
     if (this.syncInterval) {
       clearInterval(this.syncInterval);
     }
     
+    let lastSync = 0;
     this.syncInterval = setInterval(() => {
-      this.syncData();
+      const now = Date.now();
+      // Only sync if enough time has passed and user is active
+      if (now - lastSync > intervalMs && this.isOnline) {
+        lastSync = now;
+        this.syncData();
+      }
     }, intervalMs);
   }
 
@@ -205,11 +211,13 @@ class DataSyncService {
         'x-auth-token': token
       };
 
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://sentience.onrender.com/api';
+
       // Sync tasks
       const localTasks = this.loadData('tasks', []);
       if (localTasks.length > 0) {
         try {
-          await fetch('http://localhost:8000/api/tasks', { headers });
+          await fetch(`${API_BASE_URL}/tasks`, { headers });
         } catch (error) {
           console.log('Tasks already synced or API unavailable');
         }
@@ -219,7 +227,7 @@ class DataSyncService {
       const localMoodEntries = this.loadData('moodEntries', []);
       if (localMoodEntries.length > 0) {
         try {
-          await fetch('http://localhost:8000/api/mood', { headers });
+          await fetch(`${API_BASE_URL}/mood`, { headers });
         } catch (error) {
           console.log('Mood entries already synced or API unavailable');
         }
@@ -229,7 +237,7 @@ class DataSyncService {
       const localStudySessions = this.loadData('studySessions', []);
       if (localStudySessions.length > 0) {
         try {
-          await fetch('http://localhost:8000/api/study-sessions', { headers });
+          await fetch(`${API_BASE_URL}/study-sessions`, { headers });
         } catch (error) {
           console.log('Study sessions already synced or API unavailable');
         }
@@ -239,7 +247,7 @@ class DataSyncService {
       const localFocusSessions = this.loadData('focusSessions', []);
       if (localFocusSessions.length > 0) {
         try {
-          await fetch('http://localhost:8000/api/focus-sessions', { headers });
+          await fetch(`${API_BASE_URL}/focus-sessions`, { headers });
         } catch (error) {
           console.log('Focus sessions already synced or API unavailable');
         }

@@ -11,6 +11,7 @@ interface State {
   hasError: boolean;
   error?: Error;
   errorInfo?: ErrorInfo;
+  errorId?: string;
 }
 
 class ErrorBoundaryClass extends Component<Props & { navigate: (path: string) => void }, State> {
@@ -20,11 +21,22 @@ class ErrorBoundaryClass extends Component<Props & { navigate: (path: string) =>
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+    const errorId = Math.random().toString(36).substr(2, 9);
+    return { hasError: true, error, errorId };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Error caught by boundary:', error, errorInfo);
+    
+    // Log error to console in development
+    if (process.env.NODE_ENV === 'development') {
+      console.group('Error Boundary Details');
+      console.error('Error:', error);
+      console.error('Error Info:', errorInfo);
+      console.error('Error ID:', this.state.errorId);
+      console.groupEnd();
+    }
+    
     this.setState({ error, errorInfo });
   }
 
@@ -34,7 +46,18 @@ class ErrorBoundaryClass extends Component<Props & { navigate: (path: string) =>
 
   handleGoHome = () => {
     this.props.navigate('/');
-    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
+    this.setState({ hasError: false, error: undefined, errorInfo: undefined, errorId: undefined });
+  };
+
+  reportError = () => {
+    const { error, errorId } = this.state;
+    if (error) {
+      // In a real app, you'd send this to an error reporting service
+      console.log('Reporting error:', { errorId, error: error.message, stack: error.stack });
+      
+      // For now, just show a toast or alert
+      alert(`Error reported with ID: ${errorId}. Please contact support if this persists.`);
+    }
   };
 
   render() {
@@ -56,6 +79,12 @@ class ErrorBoundaryClass extends Component<Props & { navigate: (path: string) =>
               <p className="text-muted-foreground mb-6">
                 We encountered an unexpected error. Don't worry, your data is safe.
               </p>
+              
+              {this.state.errorId && (
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-4">
+                  <span>Error ID: {this.state.errorId}</span>
+                </div>
+              )}
               
               {process.env.NODE_ENV === 'development' && this.state.error && (
                 <details className="mb-6 text-left">
@@ -92,6 +121,12 @@ class ErrorBoundaryClass extends Component<Props & { navigate: (path: string) =>
                 >
                   <Home className="h-4 w-4 mr-2" />
                   Go Home
+                </button>
+                <button
+                  onClick={this.reportError}
+                  className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-border text-sm font-medium rounded-md text-foreground bg-background hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                >
+                  Report Error
                 </button>
               </div>
             </div>

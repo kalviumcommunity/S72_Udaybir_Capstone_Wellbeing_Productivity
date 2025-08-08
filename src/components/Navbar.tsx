@@ -74,9 +74,9 @@ const Navbar = () => {
 
           
           {/* Right section */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             {/* Search Bar */}
-            <div className="relative hidden md:block">
+            <div className="relative hidden sm:block">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
@@ -84,7 +84,7 @@ const Navbar = () => {
                   placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-64 pl-10 pr-4 py-2 text-sm bg-muted/50 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  className="w-32 sm:w-48 md:w-64 pl-10 pr-4 py-2 text-sm bg-muted/50 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
               </div>
             </div>
@@ -112,8 +112,9 @@ const Navbar = () => {
             <div className="relative">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 px-4 py-2 rounded-md border transition-colors hover:bg-muted">
-                    <span className="text-sm font-medium">Pages</span>
+                  <button className="flex items-center gap-2 px-2 sm:px-4 py-2 rounded-md border transition-colors hover:bg-muted">
+                    <span className="text-sm font-medium hidden sm:block">Pages</span>
+                    <span className="text-sm font-medium sm:hidden">Menu</span>
                     <ChevronDown className="h-4 w-4" />
                   </button>
                 </DropdownMenuTrigger>

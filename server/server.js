@@ -18,9 +18,23 @@ app.use(helmet());
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.'
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
 });
+
+// Apply rate limiting to all routes
 app.use('/api/', limiter);
+
+// Add session tracking middleware
+app.use('/api/', (req, res, next) => {
+  const token = req.headers['x-auth-token'];
+  if (token) {
+    // Track active sessions
+    req.sessionId = token;
+  }
+  next();
+});
 
 // CORS middleware
 app.use(cors({
@@ -29,8 +43,14 @@ app.use(cors({
     'http://localhost:3000',
     'http://localhost:4173'
   ],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'x-auth-token', 'Authorization'],
+  optionsSuccessStatus: 200
 }));
+
+// Add preflight handler for all routes
+app.options('*', cors());
 app.use(express.json({ limit: '10mb' }));
 
 // Environment validation
