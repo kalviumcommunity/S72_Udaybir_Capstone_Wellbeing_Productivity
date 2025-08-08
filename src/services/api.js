@@ -1,10 +1,21 @@
 const API_URL = import.meta.env.VITE_API_URL || 'https://sentience.onrender.com/api';
 
 // Helper function to get auth token
-const getAuthToken = () => localStorage.getItem('authToken');
+const getAuthToken = () => {
+  // Import token manager dynamically to avoid circular dependencies
+  const { tokenManager } = require('@/utils/tokenManager');
+  return tokenManager.getToken();
+};
 
-// Helper function to make authenticated requests
-const authRequest = async (endpoint, options = {}) => {
+// Helper function to make authenticated requests with retry and rate limiting
+const authRequest = async (endpoint, options = {}, retries = 3) => {
+  // Import rate limiter dynamically to avoid circular dependencies
+  const { canMakeApiRequest } = await import('@/utils/rateLimiter');
+  
+  if (!canMakeApiRequest(endpoint)) {
+    throw new Error('Rate limit exceeded. Please try again later.');
+  }
+
   const token = getAuthToken();
   const headers = {
     'Content-Type': 'application/json',
@@ -12,17 +23,46 @@ const authRequest = async (endpoint, options = {}) => {
     ...options.headers
   };
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers
-  });
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(`${API_URL}${endpoint}`, {
+        ...options,
+        headers
+      });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'API request failed');
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: 'API request failed' }));
+        
+        // Don't retry on authentication errors
+        if (response.status === 401 || response.status === 403) {
+          throw new Error(error.message || 'Authentication failed');
+        }
+        
+        // Don't retry on client errors (4xx)
+        if (response.status >= 400 && response.status < 500) {
+          throw new Error(error.message || 'Request failed');
+        }
+        
+        // Retry on server errors (5xx) or network errors
+        if (attempt === retries) {
+          throw new Error(error.message || 'Server error');
+        }
+        
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        continue;
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (attempt === retries) {
+        throw error;
+      }
+      
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+    }
   }
-
-  return response.json();
 };
 
 // Task API functions

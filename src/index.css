@@ -81,7 +81,7 @@
 
 @layer components {
   .hub-card {
-    @apply bg-white rounded-xl shadow-sm border border-border/50 overflow-hidden transition-all duration-300 hover:shadow-md hover:border-primary/20;
+    @apply bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden transition-all duration-300 hover:shadow-md hover:border-primary/20;
   }
   
   .sentience-card {

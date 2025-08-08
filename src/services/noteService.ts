@@ -231,8 +231,6 @@ export const createNote = async (noteData: {
       return null;
     }
 
-    const tagsArray = noteData.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
-
     const response = await makeAuthenticatedRequest(`${API_BASE_URL}/notes`, {
       method: 'POST',
       body: JSON.stringify({
@@ -241,7 +239,7 @@ export const createNote = async (noteData: {
         content: noteData.content,
         category: noteData.category,
         privacy: noteData.privacy,
-        tags: tagsArray,
+        tags: noteData.tags,
       }),
     });
 

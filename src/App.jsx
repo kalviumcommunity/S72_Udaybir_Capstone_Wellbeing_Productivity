@@ -40,26 +40,33 @@ const AppInitializer = ({ children }) => {
     // Initialize notification service
     notificationService.startPeriodicNotifications();
     
-
-    
     // Update activity on user interaction
     const updateActivity = () => {
       notificationService.updateActivity();
     };
     
-    // Track user activity
+    // Track user activity with debouncing
+    let activityTimeout: NodeJS.Timeout;
+    const debouncedUpdateActivity = () => {
+      clearTimeout(activityTimeout);
+      activityTimeout = setTimeout(updateActivity, 1000);
+    };
+    
     const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
     events.forEach(event => {
-      document.addEventListener(event, updateActivity, { passive: true });
+      document.addEventListener(event, debouncedUpdateActivity, { passive: true });
     });
     
     // Initial activity update
     updateActivity();
     
     return () => {
+      clearTimeout(activityTimeout);
       events.forEach(event => {
-        document.removeEventListener(event, updateActivity);
+        document.removeEventListener(event, debouncedUpdateActivity);
       });
+      // Clean up services
+      dataSyncService.stopAutoSync();
     };
   }, []);
 
