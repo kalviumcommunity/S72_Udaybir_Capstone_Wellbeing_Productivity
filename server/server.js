@@ -9,6 +9,10 @@ const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const app = express();
+
+// Trust proxy (Render/Cloudflare) so rate limiter can use X-Forwarded-For
+app.set('trust proxy', true);
+
 const PORT = process.env.PORT || 8000;
 
 // Security middleware

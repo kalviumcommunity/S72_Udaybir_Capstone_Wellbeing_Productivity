@@ -438,14 +438,14 @@ const Profile = () => {
 
             {/* Storage Warning */}
             {storageUsage.percentage > 80 && (
-              <div className="sentience-card p-6 border-l-4 border-yellow-400 bg-gradient-to-r from-yellow-50 to-yellow-100 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+              <div className="sentience-card p-6 border-l-4 border-yellow-400 bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-900/10 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-yellow-200 rounded-lg">
-                    <AlertTriangle className="h-4 w-4 text-yellow-700" />
+                  <div className="p-2 bg-yellow-200 dark:bg-yellow-900/40 rounded-lg">
+                    <AlertTriangle className="h-4 w-4 text-yellow-700 dark:text-yellow-300" />
                   </div>
-                  <span className="text-sm font-semibold text-yellow-800">Storage Warning</span>
+                  <span className="text-sm font-semibold text-yellow-800 dark:text-yellow-200">Storage Warning</span>
                 </div>
-                <p className="text-sm text-yellow-700 leading-relaxed">
+                <p className="text-sm text-yellow-700 dark:text-yellow-200/80 leading-relaxed">
                   Your storage is almost full. Consider exporting and clearing old data to free up space.
                 </p>
               </div>

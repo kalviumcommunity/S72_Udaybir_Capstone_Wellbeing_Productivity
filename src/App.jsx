@@ -46,7 +46,7 @@ const AppInitializer = ({ children }) => {
     };
     
     // Track user activity with debouncing
-    let activityTimeout: NodeJS.Timeout;
+    let activityTimeout; // was: NodeJS.Timeout (TS-only)
     const debouncedUpdateActivity = () => {
       clearTimeout(activityTimeout);
       activityTimeout = setTimeout(updateActivity, 1000);
