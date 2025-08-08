@@ -75,12 +75,12 @@ const Index = () => {
 
         <div className="page-container">
           {/* Top bar: brand + theme toggle + sign in */}
-          <div className="flex items-center justify-between py-4">
+          <div className="flex items-center justify-between py-6">
             <Link to="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
+              <div className="w-9 h-9 rounded-md bg-primary flex items-center justify-center shadow-sm">
                 <span className="text-primary-foreground font-bold">S</span>
               </div>
-              <span className="font-medium text-lg">Sentience</span>
+              <span className="font-semibold text-lg tracking-tight">Sentience</span>
             </Link>
             <div className="flex items-center gap-3">
               <ThemeToggle />
@@ -92,12 +92,20 @@ const Index = () => {
 
           {/* Hero */}
           <section className="flex flex-col items-center text-center mt-24 md:mt-32 gap-6">
-            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight">
+            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight">
               Welcome to Sentience
             </h1>
             <p className="max-w-2xl text-lg text-muted-foreground">
               Your all‑in‑one student productivity hub. Track studies and tasks, stay focused, and gain insights from your real activity.
             </p>
+            <div className="flex items-center gap-3 mt-2">
+              <Link to="/signup" className="hub-button">
+                Get started free
+              </Link>
+              <Link to="/login" className="hub-button-outline px-4 py-2 rounded-md">
+                I already have an account
+              </Link>
+            </div>
           </section>
         </div>
       </div>
