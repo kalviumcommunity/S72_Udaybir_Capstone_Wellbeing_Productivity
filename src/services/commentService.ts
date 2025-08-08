@@ -1,4 +1,5 @@
 import { toast } from '@/hooks/use-toast';
+import { sanitizeCommentContent } from '@/utils/sanitize';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://sentience.onrender.com/api';
 
@@ -66,6 +67,8 @@ export const getComments = async (noteId: string): Promise<Comment[]> => {
 };
 
 export const addComment = async (noteId: string, content: string): Promise<Comment | null> => {
+  // Sanitize comment content
+  const sanitizedContent = sanitizeCommentContent(content);
   try {
     const token = getAuthToken();
     if (!token) {
@@ -79,7 +82,7 @@ export const addComment = async (noteId: string, content: string): Promise<Comme
 
     const response = await makeAuthenticatedRequest(`${API_BASE_URL}/comments/${noteId}`, {
       method: 'POST',
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ content: sanitizedContent }),
     });
 
     if (!response.ok) {

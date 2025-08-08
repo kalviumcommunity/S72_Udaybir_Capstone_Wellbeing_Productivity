@@ -195,7 +195,7 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
       clearInterval(intervalId);
       stopAmbientSound();
     };
-  }, [isActive, isWorking, ambientSoundEnabled]);
+  }, [isActive, isWorking, ambientSoundEnabled, saveFocusSession]);
 
   const stopAmbientSound = () => {
     if (oscillatorRef.current) {

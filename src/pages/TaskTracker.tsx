@@ -29,6 +29,7 @@ import { Plus } from 'lucide-react';
 import TaskCard from '@/components/TaskCard';
 import { useUser } from '@/contexts/UserContext';
 import { taskAPI } from '@/services/api';
+import { sanitizeTaskContent } from '@/utils/sanitize';
 
 interface Task {
   _id: string;
@@ -103,15 +104,22 @@ const TaskTracker = () => {
       return;
     }
     
+    // Sanitize task data
+    const sanitizedTaskData = {
+      ...newTaskData,
+      title: sanitizeTaskContent(newTaskData.title || ''),
+      description: sanitizeTaskContent(newTaskData.description || '')
+    };
+    
     try {
       if (apiAvailable && currentUser) {
-        const newTask = await taskAPI.create(newTaskData);
+        const newTask = await taskAPI.create(sanitizedTaskData);
         setTasks([newTask, ...tasks]);
       } else {
         // Fallback to localStorage
         const newTask: Task = {
           _id: Date.now().toString(),
-          ...newTaskData,
+          ...sanitizedTaskData,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         } as Task;

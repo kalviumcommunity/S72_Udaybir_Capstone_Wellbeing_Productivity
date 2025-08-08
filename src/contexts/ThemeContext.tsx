@@ -22,7 +22,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const saved = localStorage.getItem('theme') as Theme;
     const validThemes: Theme[] = ['light', 'dark', 'system'];
     const theme = validThemes.includes(saved) ? saved : 'system';
-    console.log('Initial theme loaded:', theme);
     return theme;
   });
 
@@ -39,16 +38,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       root.classList.add(systemTheme);
       setIsDark(systemTheme === 'dark');
-      console.log('Applied system theme:', systemTheme);
     } else {
       root.classList.add(theme);
       setIsDark(theme === 'dark');
-      console.log('Applied theme:', theme);
     }
     
     // Save theme to localStorage
     localStorage.setItem('theme', theme);
-    console.log('Saved theme to localStorage:', theme);
   }, [theme]);
 
   // Listen for system theme changes

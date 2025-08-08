@@ -3,24 +3,24 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://sentience.onrender.com/
 // Helper function to get auth token
 const getAuthToken = () => {
   // Import token manager dynamically to avoid circular dependencies
-  const { tokenManager } = require('@/utils/tokenManager');
-  return tokenManager.getToken();
+  return import('@/utils/tokenManager').then(({ tokenManager }) => tokenManager.getToken());
 };
 
 // Helper function to make authenticated requests with retry and rate limiting
 const authRequest = async (endpoint, options = {}, retries = 3) => {
-  // Import rate limiter dynamically to avoid circular dependencies
+  // Import rate limiter and CSRF protection dynamically to avoid circular dependencies
   const { canMakeApiRequest } = await import('@/utils/rateLimiter');
+  const { csrfProtection } = await import('@/utils/csrf');
   
   if (!canMakeApiRequest(endpoint)) {
     throw new Error('Rate limit exceeded. Please try again later.');
   }
 
-  const token = getAuthToken();
+  const token = await getAuthToken();
   const headers = {
     'Content-Type': 'application/json',
     ...(token && { 'x-auth-token': token }),
-    ...options.headers
+    ...csrfProtection.addTokenToHeaders(options.headers)
   };
 
   for (let attempt = 1; attempt <= retries; attempt++) {

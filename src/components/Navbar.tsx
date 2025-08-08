@@ -27,8 +27,7 @@ import {
   Shield,
   FileText,
   Heart,
-  BarChart3,
-  Search
+  BarChart3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -36,7 +35,6 @@ const Navbar = () => {
   const location = useLocation();
   const { currentUser, logout } = useUser();
   const { isActive: timerIsActive, timeLeft, isWorking, formatTime } = useTimer();
-  const [searchQuery, setSearchQuery] = useState('');
   
   const isActiveRoute = (path: string) => location.pathname === path;
   
@@ -75,19 +73,6 @@ const Navbar = () => {
           
           {/* Right section */}
           <div className="flex items-center gap-2 sm:gap-4">
-            {/* Search Bar */}
-            <div className="relative hidden sm:block">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-32 sm:w-48 md:w-64 pl-10 pr-4 py-2 text-sm bg-muted/50 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                />
-              </div>
-            </div>
             
             {/* Timer Indicator */}
             {timerIsActive && (

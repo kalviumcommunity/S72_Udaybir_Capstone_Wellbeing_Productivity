@@ -16,6 +16,7 @@ import {
   Building,
   User
 } from 'lucide-react';
+import { hashPassword, generateSalt } from '@/utils/crypto';
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -125,8 +126,12 @@ const Signup = () => {
     setError(null);
     
     try {
+      // Hash password client-side before sending
+      const salt = generateSalt();
+      const hashedPassword = await hashPassword(formData.password, salt);
+      
       const avatar = getAvatarUrl(formData.gender, 'neutral');
-      await register(formData.name, formData.email, formData.password, formData.university, formData.major, formData.year, formData.gender, avatar);
+      await register(formData.name, formData.email, hashedPassword, formData.university, formData.major, formData.year, formData.gender, avatar);
       navigate('/'); // Redirect to home page after successful signup
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');

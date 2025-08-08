@@ -3,7 +3,7 @@
 interface TokenData {
   token: string;
   expiresAt: number;
-  user: any;
+  user: Record<string, unknown>;
 }
 
 class TokenManager {
@@ -11,7 +11,7 @@ class TokenManager {
   private readonly USER_KEY = 'userData';
   private readonly REFRESH_THRESHOLD = 5 * 60 * 1000; // 5 minutes before expiry
 
-  // Store token securely
+  // Store token securely using httpOnly cookies
   setToken(tokenData: TokenData): void {
     try {
       const data = {
@@ -20,19 +20,30 @@ class TokenManager {
         user: tokenData.user
       };
       
-      // Store in sessionStorage for better security (cleared on tab close)
-      sessionStorage.setItem(this.TOKEN_KEY, data.token);
+      // Store user data in sessionStorage (non-sensitive)
       sessionStorage.setItem(this.USER_KEY, JSON.stringify(data.user));
       sessionStorage.setItem('tokenExpiresAt', data.expiresAt.toString());
+      
+      // Set httpOnly cookie for token (secure)
+      document.cookie = `${this.TOKEN_KEY}=${data.token}; path=/; secure; samesite=strict; max-age=${7 * 24 * 60 * 60}`; // 7 days
     } catch (error) {
       console.error('Failed to store token:', error);
     }
   }
 
-  // Get token
+  // Get token from httpOnly cookie
   getToken(): string | null {
     try {
-      return sessionStorage.getItem(this.TOKEN_KEY);
+      const cookies = document.cookie.split(';');
+      const tokenCookie = cookies.find(cookie => 
+        cookie.trim().startsWith(`${this.TOKEN_KEY}=`)
+      );
+      
+      if (tokenCookie) {
+        return tokenCookie.split('=')[1];
+      }
+      
+      return null;
     } catch (error) {
       console.error('Failed to get token:', error);
       return null;
@@ -40,7 +51,7 @@ class TokenManager {
   }
 
   // Get user data
-  getUser(): any | null {
+  getUser(): Record<string, unknown> | null {
     try {
       const userData = sessionStorage.getItem(this.USER_KEY);
       return userData ? JSON.parse(userData) : null;
@@ -89,7 +100,8 @@ class TokenManager {
   // Clear all token data
   clearToken(): void {
     try {
-      sessionStorage.removeItem(this.TOKEN_KEY);
+      // Clear httpOnly cookie
+      document.cookie = `${this.TOKEN_KEY}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
       sessionStorage.removeItem(this.USER_KEY);
       sessionStorage.removeItem('tokenExpiresAt');
     } catch (error) {
@@ -98,7 +110,7 @@ class TokenManager {
   }
 
   // Decode JWT token (without verification)
-  decodeToken(token: string): any {
+  decodeToken(token: string): Record<string, unknown> | null {
     try {
       const base64Url = token.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -142,7 +154,7 @@ export const tokenManager = new TokenManager();
 
 // Helper functions for backward compatibility
 export const getAuthToken = (): string | null => tokenManager.getToken();
-export const setAuthToken = (token: string, user: any, expiresAt: number): void => {
+export const setAuthToken = (token: string, user: Record<string, unknown>, expiresAt: number): void => {
   tokenManager.setToken({ token, user, expiresAt });
 };
 export const clearAuthToken = (): void => tokenManager.clearToken();
