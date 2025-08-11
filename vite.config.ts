@@ -16,7 +16,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ["react", "react-dom"],
-          ui: ["@radix-ui/react-dialog", "@radix-ui/react-dropdown-menu", "@radix-ui/react-toast"],
+          ui: ["@radix-ui/react-dialog", "@radix-ui/react-dropdown-menu", "@radix-ui/react-toast", "@radix-ui/react-tabs", "@radix-ui/react-progress"],
           charts: ["recharts"],
           utils: ["clsx", "class-variance-authority", "tailwind-merge"],
           icons: ["lucide-react"],
@@ -24,6 +24,8 @@ export default defineConfig({
       },
     },
     chunkSizeWarningLimit: 1000,
+    target: "es2015",
+    cssCodeSplit: true,
   },
   plugins: [
     react(),

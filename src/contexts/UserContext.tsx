@@ -2,6 +2,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { getAvatarUrl } from '@/utils/avatar';
+import { performanceMonitor } from '@/utils/performance';
 
 export interface User {
   id: string;
@@ -94,6 +95,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   // Check if API is available and validate existing session
   useEffect(() => {
     const initializeAuth = async () => {
+      performanceMonitor.startTimer('auth-initialization');
       try {
         // Check API availability with better error handling
         const response = await fetch(`${API_URL}/health`, {
@@ -136,6 +138,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         }
       } finally {
         setIsLoading(false);
+        performanceMonitor.endTimer('auth-initialization');
       }
     };
 

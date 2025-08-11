@@ -52,17 +52,21 @@ const generateCSP = () => {
     .join('; ');
 };
 
-// Apply CSP if in production
-if (process.env.NODE_ENV === 'production') {
-  const csp = generateCSP();
-  
-  // Add CSP meta tag
-  const meta = document.createElement('meta');
-  meta.httpEquiv = 'Content-Security-Policy';
-  meta.content = csp;
-  document.head.appendChild(meta);
-  
-  console.log('Content Security Policy applied:', csp);
+// Apply CSP if in production and document is available
+if (typeof document !== 'undefined' && process.env.NODE_ENV === 'production') {
+  try {
+    const csp = generateCSP();
+    
+    // Add CSP meta tag
+    const meta = document.createElement('meta');
+    meta.httpEquiv = 'Content-Security-Policy';
+    meta.content = csp;
+    document.head.appendChild(meta);
+    
+    console.log('Content Security Policy applied:', csp);
+  } catch (error) {
+    console.warn('Failed to apply CSP:', error);
+  }
 }
 
 export { generateCSP }; 

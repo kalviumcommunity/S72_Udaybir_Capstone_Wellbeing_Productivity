@@ -32,8 +32,8 @@ const limiter = rateLimit({
 // Apply rate limiting to all routes
 app.use('/api/', limiter);
 
-// Add CSRF protection to all routes (temporarily disabled for stability)
-// app.use('/api/', csrfProtection);
+// Add CSRF protection to all routes
+app.use('/api/', csrfProtection);
 
 // Add session tracking middleware
 app.use('/api/', (req, res, next) => {
@@ -45,8 +45,8 @@ app.use('/api/', (req, res, next) => {
   next();
 });
 
-// Add CSRF error handler (temporarily disabled)
-// app.use(csrfErrorHandler);
+// Add CSRF error handler
+app.use(csrfErrorHandler);
 
 // CORS middleware
 const allowedOrigins = [
@@ -83,7 +83,11 @@ if (!process.env.JWT_SECRET) {
 }
 
 // MongoDB Connection
-const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://uday:uday@cluster0.n2vzkur.mongodb.net/student-sentience?retryWrites=true&w=majority';
+const mongoUri = process.env.MONGODB_URI;
+if (!mongoUri) {
+  console.error('❌ MONGODB_URI is not set in environment variables');
+  process.exit(1);
+}
 console.log('Connecting to MongoDB:', mongoUri.replace(/\/\/.*@/, '//***:***@')); // Hide credentials
 
 // Add connection event listeners
@@ -99,14 +103,21 @@ mongoose.connection.on('disconnected', () => {
   console.log('⚠️  MongoDB Disconnected');
 });
 
-// Connect with better error handling
+// Connect with better error handling and connection pooling
 mongoose.connect(mongoUri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 10000,
+  serverSelectionTimeoutMS: 30000,
   socketTimeoutMS: 45000,
   maxPoolSize: 10,
-  minPoolSize: 1,
+  minPoolSize: 2,
+  retryWrites: true,
+  w: 'majority',
+  keepAlive: true,
+  keepAliveInitialDelay: 300000,
+  autoReconnect: true,
+  reconnectTries: Number.MAX_VALUE,
+  reconnectInterval: 1000,
 })
 .catch(err => {
   console.error('❌ MongoDB Connection Failed:', err.message);

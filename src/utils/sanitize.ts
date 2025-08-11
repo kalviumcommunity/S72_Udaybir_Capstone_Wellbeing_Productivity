@@ -14,7 +14,7 @@ const htmlEntities: Record<string, string> = {
 
 // Encode HTML entities
 export const encodeHtml = (str: string): string => {
-  return str.replace(/[&<>"'`=\/]/g, (char) => htmlEntities[char] || char);
+  return str.replace(/[&<>"'`=/]/g, (char) => htmlEntities[char] || char);
 };
 
 // Sanitize text input (remove HTML tags)

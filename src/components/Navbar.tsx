@@ -53,7 +53,7 @@ const Navbar = () => {
   }
   
   return (
-    <nav className="fixed top-0 left-0 z-40 w-full backdrop-blur-sm bg-background/80 border-b border-border/40 animate-navbar-slide-down transition-transform duration-500">
+    <nav className="fixed top-0 left-0 z-40 w-full backdrop-blur-sm bg-background/80 border-b border-border/40 animate-navbar-slide-down transition-transform duration-500" role="navigation" aria-label="Main navigation">
       <div className="w-full px-4 sm:px-6 lg:px-8 py-2">
         <div className="flex justify-between h-16 items-center">
           {/* Left: Logo and App Name */}
@@ -61,8 +61,9 @@ const Navbar = () => {
             <Link 
               to="/" 
               className="flex items-center gap-2"
+              aria-label="Go to homepage"
             >
-              <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
+              <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center" aria-hidden="true">
                 <span className="text-primary-foreground font-bold">S</span>
               </div>
               <span className="font-medium text-lg">Sentience</span>
@@ -76,8 +77,8 @@ const Navbar = () => {
             
             {/* Timer Indicator */}
             {timerIsActive && (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
-                <Timer className="h-4 w-4 text-primary" />
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20" role="status" aria-live="polite" aria-label={`Focus timer: ${formatTime(timeLeft)} remaining, currently in ${isWorking ? 'work' : 'break'} mode`}>
+                <Timer className="h-4 w-4 text-primary" aria-hidden="true" />
                 <span className="text-sm font-medium text-primary">
                   {formatTime(timeLeft)}
                 </span>
