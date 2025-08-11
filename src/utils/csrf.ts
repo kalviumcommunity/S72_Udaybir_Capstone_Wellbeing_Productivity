@@ -2,21 +2,37 @@
 
 class CSRFProtection {
   private readonly TOKEN_KEY = 'csrf_token';
-  private readonly TOKEN_LENGTH = 32;
+  private readonly API_BASE_URL = import.meta.env.VITE_API_URL || 'https://sentience.onrender.com/api';
 
-  // Generate a random CSRF token
-  generateToken(): string {
-    const array = new Uint8Array(this.TOKEN_LENGTH);
+  // Fetch CSRF token from backend
+  async fetchToken(): Promise<string> {
+    try {
+      const response = await fetch(`${this.API_BASE_URL}/csrf-token`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch CSRF token');
+      }
+      const { csrfToken } = await response.json();
+      return csrfToken;
+    } catch (error) {
+      console.warn('Failed to fetch CSRF token from backend:', error);
+      // Fallback to generating a token locally
+      return this.generateFallbackToken();
+    }
+  }
+
+  // Generate a fallback token if backend is unavailable
+  private generateFallbackToken(): string {
+    const array = new Uint8Array(32);
     crypto.getRandomValues(array);
     return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
   }
 
   // Get or create CSRF token
-  getToken(): string {
+  async getToken(): Promise<string> {
     let token = sessionStorage.getItem(this.TOKEN_KEY);
     
     if (!token) {
-      token = this.generateToken();
+      token = await this.fetchToken();
       sessionStorage.setItem(this.TOKEN_KEY, token);
     }
     
@@ -35,11 +51,19 @@ class CSRFProtection {
   }
 
   // Add CSRF token to request headers
-  addTokenToHeaders(headers: Record<string, string> = {}): Record<string, string> {
+  async addTokenToHeaders(headers: Record<string, string> = {}): Promise<Record<string, string>> {
+    const token = await this.getToken();
     return {
       ...headers,
-      'X-CSRF-Token': this.getToken(),
+      'X-CSRF-Token': token,
     };
+  }
+
+  // Refresh CSRF token
+  async refreshToken(): Promise<string> {
+    const token = await this.fetchToken();
+    sessionStorage.setItem(this.TOKEN_KEY, token);
+    return token;
   }
 }
 
