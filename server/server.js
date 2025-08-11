@@ -90,39 +90,65 @@ if (!mongoUri) {
 }
 console.log('Connecting to MongoDB:', mongoUri.replace(/\/\/.*@/, '//***:***@')); // Hide credentials
 
-// Add connection event listeners
+// Add connection event listeners with automatic reconnection
 mongoose.connection.on('connected', () => {
   console.log('✅ MongoDB Connected Successfully');
 });
 
 mongoose.connection.on('error', (err) => {
   console.error('❌ MongoDB Connection Error:', err.message);
+  // Attempt to reconnect after a delay
+  setTimeout(() => {
+    if (mongoose.connection.readyState === 0) {
+      console.log('🔄 Attempting to reconnect to MongoDB...');
+      connectWithRetry();
+    }
+  }, 5000);
 });
 
 mongoose.connection.on('disconnected', () => {
   console.log('⚠️  MongoDB Disconnected');
+  // Attempt to reconnect after a delay
+  setTimeout(() => {
+    if (mongoose.connection.readyState === 0) {
+      console.log('🔄 Attempting to reconnect to MongoDB...');
+      connectWithRetry();
+    }
+  }, 5000);
 });
 
-// Connect with better error handling and connection pooling
-mongoose.connect(mongoUri, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 30000,
-  socketTimeoutMS: 45000,
-  maxPoolSize: 10,
-  minPoolSize: 2,
-  retryWrites: true,
-  w: 'majority',
-  keepAlive: true,
-  keepAliveInitialDelay: 300000,
-  autoReconnect: true,
-  reconnectTries: Number.MAX_VALUE,
-  reconnectInterval: 1000,
-})
-.catch(err => {
-  console.error('❌ MongoDB Connection Failed:', err.message);
-  console.log('⚠️  Server will start but database operations may fail');
-});
+// Connect with modern connection options and connection pooling
+const connectWithRetry = async (retryCount = 0, maxRetries = 5) => {
+  try {
+    await mongoose.connect(mongoUri, {
+      serverSelectionTimeoutMS: 30000,
+      socketTimeoutMS: 45000,
+      maxPoolSize: 10,
+      minPoolSize: 2,
+      retryWrites: true,
+      w: 'majority',
+      keepAlive: true,
+      keepAliveInitialDelay: 300000,
+      heartbeatFrequencyMS: 10000,
+      bufferCommands: true,
+      bufferMaxEntries: 0,
+    });
+    console.log('✅ MongoDB Connected Successfully');
+  } catch (err) {
+    console.error(`❌ MongoDB Connection Failed (attempt ${retryCount + 1}/${maxRetries}):`, err.message);
+    
+    if (retryCount < maxRetries) {
+      const delay = Math.min(1000 * Math.pow(2, retryCount), 30000); // Exponential backoff, max 30s
+      console.log(`🔄 Retrying connection in ${delay}ms...`);
+      setTimeout(() => connectWithRetry(retryCount + 1, maxRetries), delay);
+    } else {
+      console.log('⚠️  Max retries reached. Server will start but database operations may fail');
+    }
+  }
+};
+
+// Initial connection attempt
+connectWithRetry();
 
 // Import Route Files
 const userRoutes = require('./routes/userRoutes');
@@ -145,9 +171,23 @@ app.use('/api/focus-sessions', focusRoutes);
 // CSRF Token Generation
 app.get('/api/csrf-token', generateToken);
 
-// Server Health Check
+// Server Health Check with MongoDB status
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Server is running' });
+  const mongoStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  const mongoReadyState = mongoose.connection.readyState;
+  
+  res.json({ 
+    status: mongoStatus === 'connected' ? 'ok' : 'degraded', 
+    message: 'Server is running',
+    mongodb: {
+      status: mongoStatus,
+      readyState: mongoReadyState,
+      host: mongoose.connection.host,
+      port: mongoose.connection.port,
+      name: mongoose.connection.name
+    },
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Start Server
