@@ -2,10 +2,10 @@
   "name": "student-hub-backend",
   "version": "1.0.0",
   "description": "Backend for Student Hub application",
-  "main": "server.js",
+  "main": "./server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js",
+    "start": "node ./server.js",
+    "dev": "nodemon ./server.js",
     "build": "echo 'No build step required for Node.js'",
     "deploy": "npm start",
     "test": "echo 'No tests specified'"
