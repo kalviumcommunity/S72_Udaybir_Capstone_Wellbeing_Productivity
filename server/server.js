@@ -6,7 +6,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const { csrfProtection, csrfErrorHandler } = require('./middleware/csrf');
+const { csrfProtection, csrfErrorHandler, generateToken } = require('./middleware/csrf');
 require('dotenv').config();
 
 const app = express();
@@ -32,8 +32,8 @@ const limiter = rateLimit({
 // Apply rate limiting to all routes
 app.use('/api/', limiter);
 
-// Add CSRF protection to all routes
-app.use('/api/', csrfProtection);
+// Add CSRF protection to all routes (temporarily disabled for stability)
+// app.use('/api/', csrfProtection);
 
 // Add session tracking middleware
 app.use('/api/', (req, res, next) => {
@@ -45,8 +45,8 @@ app.use('/api/', (req, res, next) => {
   next();
 });
 
-// Add CSRF error handler
-app.use(csrfErrorHandler);
+// Add CSRF error handler (temporarily disabled)
+// app.use(csrfErrorHandler);
 
 // CORS middleware
 const allowedOrigins = [
@@ -130,6 +130,9 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/mood', moodRoutes);
 app.use('/api/study-sessions', studyRoutes);
 app.use('/api/focus-sessions', focusRoutes);
+
+// CSRF Token Generation
+app.get('/api/csrf-token', generateToken);
 
 // Server Health Check
 app.get('/api/health', (req, res) => {

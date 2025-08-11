@@ -20,7 +20,7 @@ const authRequest = async (endpoint, options = {}, retries = 3) => {
   const headers = {
     'Content-Type': 'application/json',
     ...(token && { 'x-auth-token': token }),
-    ...csrfProtection.addTokenToHeaders(options.headers)
+    ...(await csrfProtection.addTokenToHeaders(options.headers))
   };
 
   for (let attempt = 1; attempt <= retries; attempt++) {
