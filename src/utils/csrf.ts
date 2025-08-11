@@ -1,5 +1,17 @@
 // CSRF Protection Utility
 
+// Fallback for crypto.getRandomValues in Node.js environment
+const getRandomValues = (array: Uint8Array): Uint8Array => {
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    return crypto.getRandomValues(array);
+  }
+  // Fallback for Node.js environment
+  for (let i = 0; i < array.length; i++) {
+    array[i] = Math.floor(Math.random() * 256);
+  }
+  return array;
+};
+
 class CSRFProtection {
   private readonly TOKEN_KEY = 'csrf_token';
   private readonly API_BASE_URL = import.meta.env.VITE_API_URL || 'https://sentience.onrender.com/api';
@@ -23,7 +35,7 @@ class CSRFProtection {
   // Generate a fallback token if backend is unavailable
   private generateFallbackToken(): string {
     const array = new Uint8Array(32);
-    crypto.getRandomValues(array);
+    getRandomValues(array);
     return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
   }
 
