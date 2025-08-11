@@ -2,6 +2,18 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+// Fallback for crypto.getRandomValues in Node.js environment
+const getRandomValues = (array: Uint8Array): Uint8Array => {
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    return crypto.getRandomValues(array);
+  }
+  // Fallback for Node.js environment
+  for (let i = 0; i < array.length; i++) {
+    array[i] = Math.floor(Math.random() * 256);
+  }
+  return array;
+};
+
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
@@ -23,7 +35,7 @@ class ErrorBoundaryClass extends Component<Props & { navigate: (path: string) =>
   static getDerivedStateFromError(error: Error): State {
     // Generate a more secure error ID using crypto
     const array = new Uint8Array(8);
-    crypto.getRandomValues(array);
+    getRandomValues(array);
     const errorId = Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
     return { hasError: true, error, errorId };
   }
