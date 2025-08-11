@@ -11,7 +11,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { dataSyncService } from "./services/dataSync";
 import { notificationService } from "./services/notifications";
-import { useEffect, Suspense } from "react";
+import React, { useEffect, Suspense } from "react";
 import { LoadingSpinner } from "./components/LoadingSpinner";
 
 import Navbar from "./components/Navbar";

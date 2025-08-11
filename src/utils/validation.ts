@@ -225,7 +225,7 @@ export const validateNote = (note: {
 };
 
 // Generic form validation
-export const validateForm = (data: Record<string, any>, rules: Record<string, (value: any) => ValidationResult>): ValidationResult => {
+export const validateForm = (data: Record<string, unknown>, rules: Record<string, (value: unknown) => ValidationResult>): ValidationResult => {
   const errors: string[] = [];
   
   for (const [field, validator] of Object.entries(rules)) {

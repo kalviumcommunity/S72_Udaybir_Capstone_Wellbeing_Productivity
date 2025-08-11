@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { useUser } from './UserContext';
 import { focusAPI } from '@/services/api';
@@ -109,7 +109,7 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
     checkAPI();
   }, []);
 
-  const saveFocusSession = async (type: 'work' | 'break', duration: number) => {
+  const saveFocusSession = useCallback(async (type: 'work' | 'break', duration: number) => {
     const sessionData = {
       date: new Date().toISOString(),
       duration,
@@ -136,7 +136,7 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('Error saving focus session:', error);
     }
-  };
+  }, [apiAvailable, currentUser]);
 
   // Persist settings to localStorage
   useEffect(() => {
@@ -268,7 +268,7 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
         });
       }
     }
-  }, [timeLeft, isActive, isWorking, workDuration, breakDuration, soundEnabled, ambientSoundEnabled]);
+  }, [timeLeft, isActive, isWorking, workDuration, breakDuration, soundEnabled, ambientSoundEnabled, saveFocusSession]);
 
   const startTimer = () => {
     setIsActive(true);

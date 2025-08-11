@@ -19,8 +19,11 @@ router.get('/validate', auth, async (req, res) => {
     }
     res.json(user);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ message: 'Server error' });
+    console.error('User validation error:', err.message);
+    res.status(500).json({ 
+      message: 'Internal server error occurred while validating user',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Server error'
+    });
   }
 });
 
@@ -98,8 +101,11 @@ router.post('/reset-password', async (req, res) => {
 
     res.json({ message: 'Password reset successful' });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Password reset error:', err.message);
+    res.status(500).json({ 
+      message: 'Internal server error occurred during password reset',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Server error'
+    });
   }
 });
 

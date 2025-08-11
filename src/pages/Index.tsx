@@ -27,14 +27,15 @@ const FeatureCard = ({ icon: Icon, title, description, href, gradient }) => (
   <Link
     to={href}
     className="group relative overflow-hidden rounded-2xl bg-card/50 border border-border/50 p-6 hover:bg-card/80 w-full h-full block feature-card-hover"
+    aria-label={`Navigate to ${title} - ${description}`}
   >
-    <div className={`absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-300 ${gradient}`} />
+    <div className={`absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-300 ${gradient}`} aria-hidden="true" />
     <div className="relative z-10 h-full flex flex-col">
       <div className="flex items-center justify-between mb-4">
-        <div className={`p-3 rounded-xl ${gradient.replace('bg-gradient-to-br', 'bg-gradient-to-r')} bg-opacity-10 group-hover:bg-opacity-20 transition-all duration-300`}>
+        <div className={`p-3 rounded-xl ${gradient.replace('bg-gradient-to-br', 'bg-gradient-to-r')} bg-opacity-10 group-hover:bg-opacity-20 transition-all duration-300`} aria-hidden="true">
           <Icon className="h-6 w-6 text-primary" />
         </div>
-        <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+        <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" aria-hidden="true" />
       </div>
       <h3 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors">
         {title}
@@ -47,13 +48,13 @@ const FeatureCard = ({ icon: Icon, title, description, href, gradient }) => (
 );
 
 const StatCard = ({ icon: Icon, value, label, color }) => (
-  <div className="bg-card/30 border border-border/50 rounded-xl p-4 hover:bg-card/50 transition-all duration-300 hover:shadow-md hover:scale-[1.02]">
+  <div className="bg-card/30 border border-border/50 rounded-xl p-4 hover:bg-card/50 transition-all duration-300 hover:shadow-md hover:scale-[1.02]" role="region" aria-label={`${label}: ${value}`}>
     <div className="flex items-center gap-3">
-      <div className={`p-2 rounded-lg ${color} transition-transform duration-300 hover:scale-110`}>
+      <div className={`p-2 rounded-lg ${color} transition-transform duration-300 hover:scale-110`} aria-hidden="true">
         <Icon className="h-5 w-5 text-white" />
       </div>
       <div>
-        <p className="text-2xl font-bold">{value}</p>
+        <p className="text-2xl font-bold" aria-label={value}>{value}</p>
         <p className="text-sm text-muted-foreground">{label}</p>
       </div>
     </div>

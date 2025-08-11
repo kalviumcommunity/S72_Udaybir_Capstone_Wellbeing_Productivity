@@ -5,7 +5,7 @@ interface PerformanceMetric {
   startTime: number;
   endTime?: number;
   duration?: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 class PerformanceMonitor {
@@ -13,7 +13,7 @@ class PerformanceMonitor {
   private observers: Set<(metric: PerformanceMetric) => void> = new Set();
 
   // Start timing an operation
-  startTimer(name: string, metadata?: Record<string, any>): void {
+  startTimer(name: string, metadata?: Record<string, unknown>): void {
     const metric: PerformanceMetric = {
       name,
       startTime: performance.now(),
@@ -49,7 +49,7 @@ class PerformanceMonitor {
   async measureAsync<T>(
     name: string,
     operation: () => Promise<T>,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): Promise<T> {
     this.startTimer(name, metadata);
     try {
@@ -66,7 +66,7 @@ class PerformanceMonitor {
   measureSync<T>(
     name: string,
     operation: () => T,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): T {
     this.startTimer(name, metadata);
     try {
@@ -127,7 +127,7 @@ export const measureUserInteraction = (action: string, operation: () => void): v
 // Memory usage monitoring
 export const getMemoryUsage = (): { used: number; total: number; percentage: number } => {
   if ('memory' in performance) {
-    const memory = (performance as any).memory;
+    const memory = (performance as Performance & { memory?: { usedJSHeapSize: number; totalJSHeapSize: number } }).memory;
     return {
       used: memory.usedJSHeapSize,
       total: memory.totalJSHeapSize,
