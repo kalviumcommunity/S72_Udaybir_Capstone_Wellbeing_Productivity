@@ -3,12 +3,8 @@ services:
     name: sentience-backend
     env: node
     plan: free
-    rootDir: server
     buildCommand: npm install
-    startCommand: npm start
-    buildFilter:
-      paths:
-        - server/**
+    startCommand: node server.cjs
     envVars:
       - key: NODE_ENV
         value: production
