@@ -85,6 +85,8 @@ app.use(csrfErrorHandler);
 
 // CORS middleware
 const allowedOrigins = [
+  'https://sentiencehub.netlify.app',
+  'https://sentience.onrender.com',
   'http://localhost:3000',
   'http://localhost:4173',
   'http://localhost:8080',
