@@ -6,6 +6,7 @@ services:
     rootDir: backend
     buildCommand: npm install
     startCommand: npm start
+    dockerfilePath: null
     envVars:
       - key: NODE_ENV
         value: production
