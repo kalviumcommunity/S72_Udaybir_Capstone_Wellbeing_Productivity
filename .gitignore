@@ -16,7 +16,7 @@ lerna-debug.log*
 .env.*.local
 
 # Build outputs
-dist/
+# dist/  # Commented out - needed for Netlify deployment
 build/
 out/
 .next/
@@ -75,7 +75,7 @@ jspm_packages/
 
 # Nuxt.js build / generate output
 .nuxt
-dist
+# dist  # Commented out - needed for Netlify deployment
 
 # Gatsby files
 .cache/
@@ -162,7 +162,7 @@ jspm_packages/
 
 # Nuxt.js build / generate output
 .nuxt
-dist
+# dist  # Commented out - needed for Netlify deployment
 
 # Gatsby files
 .cache/
@@ -197,8 +197,8 @@ coverage/
 .nyc_output/
 
 # Production builds
-/frontend/dist/
-/backend/dist/
+# /frontend/dist/  # Commented out - needed for Netlify deployment
+# /backend/dist/   # Commented out - needed for Netlify deployment
 
 # Local development
 *.local
